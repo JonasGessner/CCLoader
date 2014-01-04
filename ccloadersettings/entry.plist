@@ -1,0 +1,10 @@
+{
+    entry = {
+	bundle = CCLoaderSettings;
+	cell = PSLinkCell;
+	detail = CCLoaderSettingsListController;
+	icon = CCLoaderSettings.png;
+	isController = 1;
+	label = CCLoaderSettings;
+    };
+}
