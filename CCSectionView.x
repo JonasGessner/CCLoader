@@ -20,10 +20,11 @@
 %subclass CCSectionView : SBControlCenterSectionView
 
 %new
-- (id)initWithContentView:(UIView *)view {
+- (id)initWithContentView:(UIView *)contentView {
     self = [self init];
     if (self) {
-        [self setContentView:view];
+        [self addSubview:contentView];
+        [self setContentView:contentView];
     }
     return self;
 }

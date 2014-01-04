@@ -29,9 +29,7 @@
 - (void)loadBundles {
     NSMutableSet *bundles = [NSMutableSet set];
     
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    
-    NSArray *contents = [fileManager contentsOfDirectoryAtPath:kSectionBundlePath error:nil];
+    NSArray *contents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:kSectionBundlePath error:nil];
     
     for (NSString *file in contents) {
         if ([file.pathExtension isEqualToString:@"bundle"]) {

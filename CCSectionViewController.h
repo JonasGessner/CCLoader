@@ -17,8 +17,8 @@
 - (id)initWithBundle:(NSBundle *)bundle;
 
 - (NSString *)sectionName;
+- (NSString *)sectionIdentifier;
 
-//properties:
 - (NSBundle *)bundle;
 
 @end
