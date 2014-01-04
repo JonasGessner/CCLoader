@@ -54,9 +54,9 @@ static BOOL landscape = NO;
 
 %hook SBControlCenterViewController
 
-- (void)controlCenterWillPresent {
-    landscape = UIInterfaceOrientationIsLandscape(self.interfaceOrientation);
-    %orig;
+- (double)contentHeightForOrientation:(UIInterfaceOrientation)orientation {
+    landscape = UIInterfaceOrientationIsLandscape(orientation);
+    return %orig;
 }
 
 - (void)loadView {
