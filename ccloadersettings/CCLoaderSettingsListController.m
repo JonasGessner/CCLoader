@@ -8,14 +8,26 @@
 
 #import "CCLoaderSettingsListController.h"
 
+//@interface CCLoaderSettingsListController : NSObject <UITableViewDataSource, UITableViewDelegate>
+//
+//@end
+
 @implementation CCLoaderSettingsListController
 
-- (id)specifiers {
-	if (_specifiers == nil) {
-		_specifiers = [self loadSpecifiersFromPlistName:@"CCLoaderSettings" target:self];
-	}
-    
-	return _specifiers;
-}
+//- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+//    return 2;
+//}
+//
+//- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+//    return 5;
+//}
+//
+//- (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)sourceIndexPath toIndexPath:(NSIndexPath *)destinationIndexPath {
+//    
+//}
+//
+//- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath {
+//    
+//}
 
 @end

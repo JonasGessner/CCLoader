@@ -4,13 +4,12 @@
  *     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2011 by Steve Nygard.
  */
 
-#import "UIView.h"
-
-#import "SBControlCenterObserver-Protocol.h"
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 @class SBChevronView, SBControlCenterContentContainerView;
 
-@interface SBControlCenterContainerView : UIView <SBControlCenterObserver>
+@interface SBControlCenterContainerView : UIView /*<SBControlCenterObserver>*/
 {
     UIView *_darkeningView;
     double _revealPercentage;
@@ -20,7 +19,7 @@
 
 @property(readonly, nonatomic) SBControlCenterContentContainerView *contentContainerView; // @synthesize contentContainerView=_contentContainerView;
 - (void)controlCenterDidFinishTransition;
-- (void)controlCenterWillFinishTransitionOpen:(_Bool)arg1 withDuration:(double)arg2;
+- (void)controlCenterWillFinishTransitionOpen:(BOOL)arg1 withDuration:(double)arg2;
 - (void)controlCenterWillBeginTransition;
 - (void)controlCenterDidDismiss;
 - (void)controlCenterWillPresent;

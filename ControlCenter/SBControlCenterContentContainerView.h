@@ -4,13 +4,12 @@
  *     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2011 by Steve Nygard.
  */
 
-#import "UIView.h"
-
-#import "SBControlCenterObserver-Protocol.h"
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 @class SBControlCenterContentView, _UIBackdropView;
 
-@interface SBControlCenterContentContainerView : UIView <SBControlCenterObserver>
+@interface SBControlCenterContentContainerView : UIView /*<SBControlCenterObserver>*/
 {
     _UIBackdropView *_backdropView;
     SBControlCenterContentView *_contentView;

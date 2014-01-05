@@ -74,7 +74,7 @@
 }
 
 - (CGSize)contentSizeForOrientation:(UIInterfaceOrientation)orientation {
-    return CGSizeMake(0.0f, [self.section sectionHeight]);
+    return CGSizeMake([UIScreen mainScreen].bounds.size.width, [self.section sectionHeight]);
 }
 
 %end
