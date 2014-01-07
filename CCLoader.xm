@@ -11,39 +11,148 @@
 
 #include <substrate.h>
 
-#import "CCBundleLoader.h"
+#import "ccloadersettings/CCBundleLoader.h"
 #import "CCSectionViewController.h"
 #import "CCScrollView.h"
 
+#import "ControlCenter/SBControlCenterController.h"
 #import "ControlCenter/SBControlCenterViewController.h"
 #import "ControlCenter/SBControlCenterContainerView.h"
 #import "ControlCenter/SBControlCenterContentContainerView.h"
+#import "ControlCenter/SBControlCenterContentView.h"
 
+#define kCCLoaderStockOrderedSections @[@"com.apple.controlcenter.settings", @"com.apple.controlcenter.brightness", @"com.apple.controlcenter.media-controls", @"com.apple.controlcenter.air-stuff", @"com.apple.controlcenter.quick-launch"]
 
-static NSArray *customSections = nil;
+#define kCCLoaderStockSections [NSSet setWithArray:kCCLoaderStockOrderedSections]
 
-NS_INLINE void loadCCSections(void) {
-    NSCAssert(!customSections, @"Sections already loaded");
+#define kCCLoaderSettingsPath [[NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) firstObject] stringByAppendingPathComponent:@"Preferences/de.j-gessner.ccloader.plist"]
+
+static NSMutableArray *sectionViewControllers = nil;
+
+NS_INLINE void loadCCSections(SBControlCenterContentView *contentView) {
+    NSCParameterAssert(contentView);
     
     CCBundleLoader *loader = [CCBundleLoader sharedInstance];
-    [loader loadBundles];
     
-    NSMutableArray *sectionViewControllers = [NSMutableArray array];
+    NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:kCCLoaderSettingsPath];
     
-    for (NSBundle *bundle in loader.bundles) {
-        CCSectionViewController *sectionViewController = [[%c(CCSectionViewController) alloc] initWithBundle:bundle];
-        
-        [sectionViewControllers addObject:sectionViewController];
+    NSArray *sectionsToLoad = prefs[@"EnabledSections"];
+    
+    if (!sectionsToLoad) {
+        sectionsToLoad = kCCLoaderStockOrderedSections;
     }
     
-    customSections = sectionViewControllers.copy;
+    NSMutableArray *_sectionViewControllers = [NSMutableArray arrayWithCapacity:sectionsToLoad.count];
+    
+    NSSet *stockLayout = kCCLoaderStockSections;
+    
+    NSMutableSet *removeStockSections = [kCCLoaderStockSections mutableCopy];
+    
+    for (NSString *sectionID in sectionsToLoad) {
+        BOOL reusedPreviousSection = NO;
+        
+        NSUInteger index = 0;
+        
+        for (CCSectionViewController *sectionViewController in sectionViewControllers) {
+            if ([sectionViewController.sectionIdentifier isEqualToString:sectionID]) {
+                [_sectionViewControllers addObject:sectionViewController];
+                
+                [sectionViewControllers removeObjectAtIndex:index];
+                
+                reusedPreviousSection = YES;
+                
+                break;
+            }
+            
+            index++;
+        }
+        
+        if (!reusedPreviousSection) {
+            if ([stockLayout containsObject:sectionID]) {
+                [removeStockSections removeObject:sectionID];
+                
+                if ([sectionID isEqualToString:@"com.apple.controlcenter.settings"]) {
+                    [_sectionViewControllers addObject:contentView.settingsSection];
+                }
+                else if ([sectionID isEqualToString:@"com.apple.controlcenter.brightness"]) {
+                    [_sectionViewControllers addObject:contentView.brightnessSection];
+                }
+                else if ([sectionID isEqualToString:@"com.apple.controlcenter.media-controls"]) {
+                    [_sectionViewControllers addObject:contentView.mediaControlsSection];
+                }
+                else if ([sectionID isEqualToString:@"com.apple.controlcenter.air-stuff"]) {
+                    [_sectionViewControllers addObject:contentView.airplaySection];
+                }
+                else if ([sectionID isEqualToString:@"com.apple.controlcenter.quick-launch"]) {
+                    [_sectionViewControllers addObject:contentView.quickLaunchSection];
+                }
+                else {
+                    NSCAssert(0, @"Something has gone really wrong!");
+                }
+            }
+            else {
+                for (NSBundle *bundle in loader.bundles) {
+                    if ([bundle.bundleIdentifier isEqualToString:sectionID]) {
+                        CCSectionViewController *sectionViewController = [[%c(CCSectionViewController) alloc] initWithBundle:bundle];
+                        
+                        [_sectionViewControllers addObject:sectionViewController];
+                        
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    for (CCSectionViewController *sectionViewController in sectionViewControllers) {
+        [contentView _removeSectionController:sectionViewController];
+    }
+    
+    sectionViewControllers = _sectionViewControllers;
+    
+    for (NSString *sectionID in removeStockSections) {
+        if ([sectionID isEqualToString:@"com.apple.controlcenter.settings"]) {
+            [contentView _removeSectionController:contentView.settingsSection];
+        }
+        else if ([sectionID isEqualToString:@"com.apple.controlcenter.brightness"]) {
+            [contentView _removeSectionController:contentView.brightnessSection];
+        }
+        else if ([sectionID isEqualToString:@"com.apple.controlcenter.media-controls"]) {
+            [contentView _removeSectionController:contentView.mediaControlsSection];
+        }
+        else if ([sectionID isEqualToString:@"com.apple.controlcenter.air-stuff"]) {
+            [contentView _removeSectionController:contentView.airplaySection];
+        }
+        else if ([sectionID isEqualToString:@"com.apple.controlcenter.quick-launch"]) {
+            [contentView _removeSectionController:contentView.quickLaunchSection];
+        }
+        else {
+            NSCAssert(0, @"Something has gone really wrong!");
+        }
+    }
 }
 
+//NS_INLINE void unloadCCSections(void) {
+//    sectionViewControllers = nil;
+//}
 
+NS_INLINE void reloadCCSections(void) {
+    //    unloadCCSections();
+    
+    SBControlCenterController *controller = [%c(SBControlCenterController) sharedInstanceIfExists];
+    
+    NSCParameterAssert(controller);
+    
+    
+    SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(MSHookIvar<SBControlCenterViewController *>(controller, "_viewController"), "_contentView");
+    
+    loadCCSections(contentView);
+}
 
 static BOOL landscape = NO;
 
 static CGFloat realHeight = 0.0f;
+static CGFloat fakeHeight = 0.0f;
 
 static CCScrollView *scroller = nil;
 
@@ -70,6 +179,7 @@ static CCScrollView *scroller = nil;
     
     if (!scroller) {
         scroller = [[CCScrollView alloc] init];
+        scroller.scrollsToTop = NO;
     }
     
     if (scroller.superview != self) {
@@ -84,39 +194,11 @@ static CCScrollView *scroller = nil;
     
     CGRect frame = self.bounds;
     
+    frame.size.height = fakeHeight;
     scroller.frame = frame;
     
     frame.size.height = realHeight;
-    
     scroller.contentSize = frame.size;
-}
-
-- (void)setFrame:(CGRect)frame {
-    if (landscape) {
-        return %orig;
-    }
-    
-    CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
-    
-    if (frame.size.height > screenHeight) {
-        frame.size.height = screenHeight;
-    }
-    
-    %orig;
-}
-
-- (void)setBounds:(CGRect)frame {
-    if (landscape) {
-        return %orig;
-    }
-    
-    CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
-    
-    if (frame.size.height > screenHeight) {
-        frame.size.height = screenHeight;
-    }
-    
-    %orig;
 }
 
 %end
@@ -138,12 +220,9 @@ static CCScrollView *scroller = nil;
     if (landscape) {
         return %orig;
     }
-    
-    NSMutableArray *sections = %orig;
-    
-    [sections addObjectsFromArray:customSections];
-    
-    return sections;
+    else {
+        return sectionViewControllers;
+    }
 }
 
 %end
@@ -165,23 +244,54 @@ static CCScrollView *scroller = nil;
     
     if (height > screenHeight) {
         height = screenHeight;
+        fakeHeight = screenHeight;
+    }
+    else {
+        fakeHeight = height;
     }
     
     return height;
 }
 
-- (void)loadView {
-    loadCCSections();
+- (void)_handlePan:(UIPanGestureRecognizer *)gesture {
+    if (gesture.state == UIGestureRecognizerStateBegan) {
+        [scroller setContentOffset:CGPointZero];
+    }
     %orig;
+}
+
+- (void)controlCenterWillPresent {
+    if (!sectionViewControllers) {
+        loadCCSections(MSHookIvar<SBControlCenterContentView *>(self, "_contentView"));
+    }
+    
+    %orig;
+}
+
+- (void)controlCenterDidDismiss {
+    %orig;
+    
+    //    unloadCCSections();
+    
+    [scroller removeFromSuperview];
+    
+    realHeight = 0.0f;
+    fakeHeight = 0.0f;
+    
+    landscape = NO;
 }
 
 %end
 
 %end
 
-
 %ctor {
 	@autoreleasepool {
+        CCBundleLoader *loader = [CCBundleLoader sharedInstance];
+        [loader loadBundles];
+        
 		%init(main);
+        
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)reloadCCSections, CFSTR("de.j-gessner.ccloader.settingschanged"), NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
 	}
 }

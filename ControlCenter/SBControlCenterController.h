@@ -4,13 +4,12 @@
  *     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2011 by Steve Nygard.
  */
 
-#import "UIViewController.h"
-
-#import "SBControlCenterViewControllerDelegate-Protocol.h"
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 @class NSHashTable, NSMutableSet, SBApplication, SBChevronView, SBControlCenterRootView, SBControlCenterViewController, SBControlCenterWindow, UIView, _UIBackdropView;
 
-@interface SBControlCenterController : UIViewController <SBControlCenterViewControllerDelegate>
+@interface SBControlCenterController : UIViewController /*<SBControlCenterViewControllerDelegate>*/
 {
     SBControlCenterWindow *_window;
     SBControlCenterRootView *_rootView;
@@ -19,78 +18,78 @@
     _UIBackdropView *_fullScreenGrabberBackdrop;
     SBChevronView *_fullScreenChevron;
     NSMutableSet *_preventDismissalOnLockReasons;
-    _Bool _uiLocked;
+    BOOL _uiLocked;
     NSHashTable *_observers;
     long long _orientation;
-    _Bool _animatingInitialPresentation;
-    _Bool _gotFirstBackdropUpdate;
-    _Bool _inGrabberOnlyMode;
-    _Bool _presented;
-    _Bool _transitioning;
-    _Bool _fullyRevealed;
+    BOOL _animatingInitialPresentation;
+    BOOL _gotFirstBackdropUpdate;
+    BOOL _inGrabberOnlyMode;
+    BOOL _presented;
+    BOOL _transitioning;
+    BOOL _fullyRevealed;
     SBApplication *_coveredApplication;
 }
 
-+ (void)notifyControlCenterControl:(id)arg1 didActivate:(_Bool)arg2;
++ (void)notifyControlCenterControl:(id)arg1 didActivate:(BOOL)arg2;
 + (id)sharedInstanceIfExists;
 + (id)sharedInstance;
-+ (id)_sharedInstanceCreatingIfNeeded:(_Bool)arg1;
-@property(nonatomic, getter=isFullyRevealed) _Bool fullyRevealed; // @synthesize fullyRevealed=_fullyRevealed;
-@property(nonatomic, getter=isTransitioning) _Bool transitioning; // @synthesize transitioning=_transitioning;
-@property(nonatomic, getter=isPresented) _Bool presented; // @synthesize presented=_presented;
++ (id)_sharedInstanceCreatingIfNeeded:(BOOL)arg1;
+@property(nonatomic, getter=isFullyRevealed) BOOL fullyRevealed; // @synthesize fullyRevealed=_fullyRevealed;
+@property(nonatomic, getter=isTransitioning) BOOL transitioning; // @synthesize transitioning=_transitioning;
+@property(nonatomic, getter=isPresented) BOOL presented; // @synthesize presented=_presented;
 @property(retain, nonatomic) SBApplication *coveredApplication; // @synthesize coveredApplication=_coveredApplication;
-@property(nonatomic) _Bool inGrabberOnlyMode; // @synthesize inGrabberOnlyMode=_inGrabberOnlyMode;
-@property(nonatomic, getter=isUILocked) _Bool UILocked; // @synthesize UILocked=_uiLocked;
+@property(nonatomic) BOOL inGrabberOnlyMode; // @synthesize inGrabberOnlyMode=_inGrabberOnlyMode;
+@property(nonatomic, getter=isUILocked) BOOL UILocked; // @synthesize UILocked=_uiLocked;
 - (void)controlCenterViewController:(id)arg1 backdropViewDidUpdate:(id)arg2;
 - (void)controlCenterViewController:(id)arg1 handlePan:(id)arg2;
 - (void)controlCenterViewController:(id)arg1 handleTap:(id)arg2;
-- (_Bool)controlCenterViewController:(id)arg1 canHandleGestureRecognizer:(id)arg2;
+- (BOOL)controlCenterViewController:(id)arg1 canHandleGestureRecognizer:(id)arg2;
 - (void)controlCenterViewControllerWantsDismissal:(id)arg1;
-- (void)_finishPresenting:(_Bool)arg1 completion:(id)arg2;
+- (void)_finishPresenting:(BOOL)arg1 completion:(id)arg2;
 - (void)_dismissWithDuration:(double)arg1 additionalAnimations:(id)arg2 completion:(void)arg3;
-- (void)dismissAnimated:(_Bool)arg1 withAdditionalAnimations:(id)arg2 completion:(void)arg3;
-- (void)dismissAnimated:(_Bool)arg1 completion:(id)arg2;
-- (void)dismissAnimated:(_Bool)arg1;
+- (void)dismissAnimated:(BOOL)arg1 withAdditionalAnimations:(id)arg2 completion:(void)arg3;
+- (void)dismissAnimated:(BOOL)arg1 completion:(id)arg2;
+- (void)dismissAnimated:(BOOL)arg1;
 - (void)_presentWithDuration:(double)arg1 completion:(id)arg2;
-- (void)presentAnimated:(_Bool)arg1;
-- (void)presentAnimated:(_Bool)arg1 completion:(id)arg2;
-- (void)hideGrabberAnimated:(_Bool)arg1 completion:(id)arg2;
-- (void)hideGrabberAnimated:(_Bool)arg1;
-- (void)showGrabberAnimated:(_Bool)arg1;
+- (void)presentAnimated:(BOOL)arg1;
+- (void)presentAnimated:(BOOL)arg1 completion:(id)arg2;
+- (void)hideGrabberAnimated:(BOOL)arg1 completion:(id)arg2;
+- (void)hideGrabberAnimated:(BOOL)arg1;
+- (void)showGrabberAnimated:(BOOL)arg1;
 - (void)cancelTransition;
 - (void)endTransitionWithVelocity:(struct CGPoint)arg1 completion:(id)arg2;
-- (id)_createDynamicAnimationForShow:(_Bool)arg1 currentValue:(double)arg2 velocity:(double)arg3;
+- (id)_createDynamicAnimationForShow:(BOOL)arg1 currentValue:(double)arg2 velocity:(double)arg3;
 - (void)updateTransitionWithTouchLocation:(struct CGPoint)arg1 velocity:(struct CGPoint)arg2;
 - (void)beginTransitionWithTouchLocation:(struct CGPoint)arg1;
 - (void)_endPresentation;
 - (void)_beginPresentation;
-- (_Bool)allowHideTransition;
-- (_Bool)allowShowTransition;
-- (_Bool)_allowsShowTransition;
-- (void)_setNCGrabberHidden:(_Bool)arg1;
+- (BOOL)allowHideTransition;
+- (BOOL)allowShowTransition;
+- (BOOL)_allowsShowTransition;
+- (void)_setNCGrabberHidden:(BOOL)arg1;
 - (void)_updateGrabberVisibility;
 - (void)_updateRevealPercentage:(double)arg1;
 - (void)_revealSlidingViewToHeight:(double)arg1;
 - (double)_controlCenterHeightForTouchLocation:(struct CGPoint)arg1;
 - (double)_yValueForClosed;
 - (double)_yValueForOpen;
-- (_Bool)shouldAutorotateToInterfaceOrientation:(long long)arg1;
-- (_Bool)shouldAutomaticallyForwardRotationMethods;
-- (_Bool)shouldAutomaticallyForwardAppearanceMethods;
-- (_Bool)wantsFullScreenLayout;
+- (BOOL)shouldAutorotateToInterfaceOrientation:(long long)arg1;
+- (BOOL)shouldAutomaticallyForwardRotationMethods;
+- (BOOL)shouldAutomaticallyForwardAppearanceMethods;
+- (BOOL)wantsFullScreenLayout;
 - (id)_window;
-- (void)preventDismissalOnLock:(_Bool)arg1 forReason:(id)arg2;
+- (void)preventDismissalOnLock:(BOOL)arg1 forReason:(id)arg2;
 - (void)_dismissOnLock;
 - (void)_uiRelockedNotification:(id)arg1;
 - (void)_lockStateChangedNotification:(id)arg1;
-- (_Bool)isGrabberVisible;
-- (_Bool)isVisible;
+- (BOOL)isGrabberVisible;
+- (BOOL)isVisible;
 - (void)loadView;
-- (_Bool)handleMenuButtonTap;
+- (BOOL)handleMenuButtonTap;
 - (void)removeObserver:(id)arg1;
 - (void)addObserver:(id)arg1;
 - (void)_enumerateObservers:(id)arg1;
-- (_Bool)isAvailableWhileLocked;
+- (BOOL)isAvailableWhileLocked;
 - (void)dealloc;
 - (id)init;
 

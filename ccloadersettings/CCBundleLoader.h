@@ -14,6 +14,7 @@
 + (instancetype)sharedInstance;
 
 - (void)loadBundles;
+- (void)unloadBundles;
 
 @property (nonatomic, strong, readonly) NSSet *bundles;
 

@@ -11,14 +11,14 @@
 @implementation CCScrollView
 
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
-    if ([gestureRecognizer locationInView:self].y <= 50.0f) {
+    if ([gestureRecognizer locationInView:self].y <= 30.0f) {
         return NO;
     }
     return YES;
 }
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
-    return YES;
+    return NO;
 }
 
 @end

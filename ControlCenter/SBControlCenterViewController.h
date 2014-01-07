@@ -8,7 +8,7 @@
 #import <UIKit/UIKit.h>
 
 
-//@class NSMutableArray, SBControlCenterContainerView, SBControlCenterContentView, SBControlCenterSettings, UIPanGestureRecognizer, UITapGestureRecognizer;
+@class NSMutableArray, SBControlCenterContainerView, SBControlCenterContentView, SBControlCenterSettings, UIPanGestureRecognizer, UITapGestureRecognizer;
 
 @interface SBControlCenterViewController : UIViewController /*<UIGestureRecognizerDelegate, SBControlCenterSectionViewControllerDelegate, _UISettingsKeyObserver, _UIBackdropViewObserver, SBControlCenterObserver>*/
 {

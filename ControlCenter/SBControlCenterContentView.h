@@ -9,7 +9,7 @@
 
 @class NSMutableArray, SBCCQuickLaunchSectionController, SBCCSettingsSectionController, SBControlCenterGrabberView, SBControlCenterSectionViewController, UIViewController;
 
-@interface SBControlCenterContentView : UIView <SBControlCenterObserver>
+@interface SBControlCenterContentView : UIView /*<SBControlCenterObserver>*/
 {
     NSMutableArray *_dividerViews;
     UIViewController *_viewController;
@@ -41,7 +41,7 @@
 - (void)_addSectionController:(id)arg1;
 - (double)contentHeightForOrientation:(long long)arg1;
 - (id)_separatorAtIndex:(unsigned long long)arg1;
-- (id)_allSections;
+- (NSMutableArray *)_allSections;
 - (void)dealloc;
 - (id)initWithFrame:(struct CGRect)arg1;
 

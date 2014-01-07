@@ -77,4 +77,15 @@
     return CGSizeMake([UIScreen mainScreen].bounds.size.width, [self.section sectionHeight]);
 }
 
+- (NSUInteger)hash {
+    return [self.sectionIdentifier hash];
+}
+
+- (BOOL)isEqual:(id)other {
+    if ([other isKindOfClass:%c(SBControlCenterSectionViewController)] && [other hash] == self.hash) {
+        return YES;
+    }
+    return NO;
+}
+
 %end

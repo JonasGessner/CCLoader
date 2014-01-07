@@ -21,7 +21,7 @@
 	<key>DTPlatformName</key>
 	<string>iphoneos</string>
 	<key>MinimumOSVersion</key>
-	<string>5.0</string>
+	<string>7.0</string>
 	<key>NSPrincipalClass</key>
 	<string>CCLoaderSettingsListController</string>
 </dict>

@@ -50,5 +50,9 @@
     }
 }
 
+- (void)unloadBundles {
+    _bundles = nil;
+}
+
 
 @end

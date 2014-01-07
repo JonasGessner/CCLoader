@@ -8,8 +8,8 @@ include theos/makefiles/common.mk
 
 TWEAK_NAME = CCLoader
 CCLoader_CFLAGS = -fobjc-arc
-CCLoader_FILES = CCLoader.xm CCSectionViewController.x CCSectionView.x CCBundleLoader.m CCScrollView.m
-CCLoader_FRAMEWORKS = Foundation UIKit
+CCLoader_FILES = CCLoader.xm CCSectionViewController.x CCSectionView.x ccloadersettings/CCBundleLoader.m CCScrollView.m
+CCLoader_FRAMEWORKS = Foundation UIKit CoreGraphics CoreFoundation
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
