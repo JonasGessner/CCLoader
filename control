@@ -1,9 +1,8 @@
-Package: ccloader
+Package: de.j-gessner.ccloader
 Name: CCLoader
 Depends: mobilesubstrate, firmware (>= 7.0)
-Version: 0.0.1
+Version: 1.0
 Architecture: iphoneos-arm
-Description: An awesome Cydia Substrate tweak!
-Maintainer: Jonas Gessner
+Description: Completely customize Control Center
 Author: Jonas Gessner
 Section: Tweaks
