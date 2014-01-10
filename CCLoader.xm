@@ -28,6 +28,8 @@
 
 #define kCCLoaderSettingsPath [[NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) firstObject] stringByAppendingPathComponent:@"Preferences/de.j-gessner.ccloader.plist"]
 
+#define iPad (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
+
 static NSMutableArray *sectionViewControllers = nil;
 
 NS_INLINE void loadCCSections(SBControlCenterContentView *contentView) {
@@ -184,6 +186,10 @@ static CCScrollView *scroller = nil;
 %hook SBControlCenterContentContainerView
 
 - (void)layoutSubviews {
+    if (iPad) {
+        return %orig;
+    }
+    
     if (landscape) {
         if (scroller) {
             UIView *contentView = MSHookIvar<UIView *>(self, "_contentView");
@@ -229,7 +235,7 @@ static CCScrollView *scroller = nil;
 %hook SBControlCenterContentView
 
 - (void)setFrame:(CGRect)frame {
-    if (landscape) {
+    if (landscape || iPad) {
         return %orig;
     }
     
@@ -239,7 +245,7 @@ static CCScrollView *scroller = nil;
 }
 
 - (NSMutableArray *)_allSections {
-    if (landscape) {
+    if (landscape || iPad) {
         return %orig;
     }
     else {
@@ -252,6 +258,10 @@ static CCScrollView *scroller = nil;
 %hook SBControlCenterViewController
 
 - (CGFloat)contentHeightForOrientation:(UIInterfaceOrientation)orientation {
+    if (iPad) {
+        return %orig;
+    }
+    
     landscape = UIInterfaceOrientationIsLandscape(orientation);
     
     CGFloat height = %orig;
@@ -276,6 +286,10 @@ static CCScrollView *scroller = nil;
 }
 
 - (void)_handlePan:(UIPanGestureRecognizer *)gesture {
+    if (landscape || iPad) {
+        return %orig;
+    }
+    
     if (gesture.state == UIGestureRecognizerStateBegan) {
         [scroller setContentOffset:CGPointZero];
     }
@@ -284,6 +298,10 @@ static CCScrollView *scroller = nil;
 }
 
 - (void)controlCenterWillPresent {
+    if (iPad) {
+        return %orig;
+    }
+    
     if (!sectionViewControllers) {
         loadCCSections(MSHookIvar<SBControlCenterContentView *>(self, "_contentView"));
     }
@@ -292,6 +310,10 @@ static CCScrollView *scroller = nil;
 }
 
 - (void)controlCenterDidDismiss {
+    if (iPad) {
+        return %orig;
+    }
+    
     %orig;
     
     [scroller removeFromSuperview];
