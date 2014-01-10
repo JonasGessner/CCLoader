@@ -4,19 +4,18 @@
  *     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2011 by Steve Nygard.
  */
 
-#import "UIView.h"
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
-#import "SBUIControlCenterControl-Protocol.h"
-
-@interface SBControlCenterKnockoutView : UIView <SBUIControlCenterControl>
+@interface SBControlCenterKnockoutView : UIView /*<SBUIControlCenterControl>*/
 {
 }
 
 - (void)controlConfigurationDidChangeForState:(long long)arg1;
 - (void)controlAppearanceDidChangeForState:(long long)arg1;
-- (_Bool)_shouldAnimatePropertyWithKey:(id)arg1;
+- (BOOL)_shouldAnimatePropertyWithKey:(id)arg1;
 - (void)dealloc;
-- (id)initWithFrame:(struct CGRect)arg1;
+- (id)initWithFrame:(CGRect)arg1;
 
 @end
 

@@ -11,7 +11,7 @@
 #import "CCBundleLoader.h"
 
 
-@interface CCLoaderSettingsListController () <UITableViewDataSource, UITableViewDelegate> {
+@interface CCLoaderSettingsListController () <UITableViewDataSource, UITableViewDelegate, UIActionSheetDelegate> {
     NSMutableOrderedSet *_enabled;
     NSMutableOrderedSet *_disabled;
     
@@ -38,22 +38,26 @@
     if (self) {
         self.title = @"CCLoader";
         
+        UIButton *addButton = [UIButton buttonWithType:UIButtonTypeInfoLight];
+        [addButton addTarget:self action:@selector(infoPressed:) forControlEvents:UIControlEventTouchUpInside];
+        
+        self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:addButton];
+        
         CCBundleLoader *loader = [CCBundleLoader sharedInstance];
         [loader loadBundles];
         
         NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:kCCLoaderSettingsPath];
         
-        _enabled = [NSMutableOrderedSet orderedSetWithArray:prefs[@"EnabledSections"]];
-        _disabled = [NSMutableOrderedSet orderedSetWithArray:prefs[@"DisabledSections"]];
+        NSArray *enabledArray = prefs[@"EnabledSections"];
         
-        if (!_enabled.count) {
+        if (!enabledArray) {
             _enabled = [NSMutableOrderedSet orderedSetWithArray:kCCLoaderStockOrderedSections];
         }
-        
-        if (!_disabled) {
-            _disabled = [NSMutableOrderedSet orderedSet];
+        else {
+            _enabled = [NSMutableOrderedSet orderedSetWithArray:enabledArray];
         }
         
+        _disabled = [NSMutableOrderedSet orderedSetWithArray:prefs[@"DisabledSections"]];
         
         NSMutableDictionary *displayNames = [kCCLoaderStockDisplayNames mutableCopy];
         
@@ -103,8 +107,37 @@
     return self;
 }
 
-- (void)setTitle:(NSString *)title {
-    [super setTitle:@"CCLoader"];
+- (void)infoPressed:(UIButton *)__unused sender {
+    UIActionSheet *sheet = [[UIActionSheet alloc] initWithTitle:@"CCLoader by Jonas Gessner" delegate:self cancelButtonTitle:@"Cancel" destructiveButtonTitle:@"Donate" otherButtonTitles:@"Twitter", @"More Apps & Tweaks", @"Source Code", nil];
+    
+    [sheet showFromBarButtonItem:self.navigationItem.rightBarButtonItem animated:YES];
+}
+
+- (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex {
+    if (buttonIndex == 0) {
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=gessner%40email%2eit&lc=US&item_name=Donation%20for%20CCLoader&no_note=0&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donate_LG%2egif%3aNonHostedGuest"]];
+    }
+    else if (buttonIndex == 1) {
+        NSString *user = @"JonasGessner";
+        
+        NSArray *schemes = @[[NSURL URLWithString:[NSString stringWithFormat:@"twitter://user?screen_name=%@", user]], [NSURL URLWithString:[NSString stringWithFormat:@"tweetbot://%@/timeline", user]], [NSURL URLWithString:[NSString stringWithFormat:@"twitterrific:///profile?screen_name=%@", user]]];
+        
+        for (NSURL *URL in schemes) {
+            if ([[UIApplication sharedApplication] canOpenURL:URL]) {
+                [[UIApplication sharedApplication] openURL:URL];
+                return;
+            }
+        }
+        
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:[NSString stringWithFormat:@"http://twitter.com/%@", user]]];
+        
+    }
+    else if (buttonIndex == 2) {
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"http://j-gessner.de/"]];
+    }
+    else if (buttonIndex == 3) {
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"http://github.com/JonasGessner/CCLoader"]];
+    }
 }
 
 - (void)viewDidLoad {
@@ -115,14 +148,23 @@
     [self.tableView setEditing:YES];
 }
 
+- (void)loadView {
+    UITableView *tableView = [[UITableView alloc] initWithFrame:[UIScreen mainScreen].applicationFrame style:UITableViewStyleGrouped];
+    
+    tableView.dataSource = self;
+    tableView.delegate = self;
+    
+    self.view = tableView;
+}
+
 - (UITableView *)tableView {
-    return self.table;
+    return (UITableView *)self.view;
 }
 
 - (void)syncPrefs {
     NSMutableDictionary *prefs = [NSMutableDictionary dictionary];
     
-    if (_enabled.count) {
+    if (_enabled) {
         prefs[@"EnabledSections"] = _enabled.array;
     }
     
@@ -140,12 +182,20 @@
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    NSUInteger num = 0;
+    
     if (section == 0) {
-        return _enabled.count;
+        num = _enabled.count;
     }
     else {
-        return _disabled.count;
+        num = _disabled.count;
     }
+    
+    if (!num) {
+        num = 1;
+    }
+    
+    return num;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
@@ -169,13 +219,20 @@
     
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellID forIndexPath:indexPath];
     
-    [cell setShowsReorderControl:YES];
-    
-    NSString *ID = (indexPath.section == 0 ? _enabled[indexPath.row] : _disabled[indexPath.row]);
-    
-    NSString *displayName = _displayNames[ID];
-    
-    cell.textLabel.text = (displayName ? : ID);
+    if ((indexPath.section == 0 && _enabled.count) || (indexPath.section == 1 && _disabled.count)) {
+        NSString *ID = (indexPath.section == 0 ? _enabled[indexPath.row] : _disabled[indexPath.row]);
+        
+        NSString *displayName = _displayNames[ID];
+        
+        cell.textLabel.text = (displayName ? : ID);
+        
+        cell.textLabel.alpha = 1.0f;
+    }
+    else {
+        cell.textLabel.alpha = 0.5f;
+        
+        cell.textLabel.text = @"Empty";
+    }
     
     return cell;
 }
@@ -203,45 +260,25 @@
 }
 
 - (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath {
-    return YES;
-}
-
-
-
-- (NSTextAlignment)tableView:(UITableView *)tableView titleAlignmentForFooterInSection:(NSInteger)section {
-    return NSTextAlignmentLeft;
-}
-- (NSTextAlignment)tableView:(UITableView *)tableView titleAlignmentForHeaderInSection:(NSInteger)section {
-    return NSTextAlignmentLeft;
-}
-- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
-    return nil;
-}
-- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
-    return nil;
-}
-- (NSString *)tableView:(UITableView *)tableView detailTextForHeaderInSection:(NSInteger)section {
-    return nil;
-}
-- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
-    if (section == 0) {
-        return CGFLOAT_MIN;
-    }
-    else {
-        return 34.0f;
-    }
-}
-- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
-    return 34.0f;
+    return ((indexPath.section == 0 && _enabled.count) || (indexPath.section == 1 && _disabled.count));
 }
 
 #pragma mark - UITableViewDelegate
 
 - (NSIndexPath *)tableView:(UITableView *)tableView targetIndexPathForMoveFromRowAtIndexPath:(NSIndexPath *)sourceIndexPath toProposedIndexPath:(NSIndexPath *)proposedDestinationIndexPath {
-    return proposedDestinationIndexPath;
+    if ((proposedDestinationIndexPath.section == 0 && !_enabled.count) || (proposedDestinationIndexPath.section == 1 && !_disabled.count)) {
+        return [NSIndexPath indexPathForRow:0 inSection:proposedDestinationIndexPath.section];
+    }
+    else {
+        return proposedDestinationIndexPath;
+    }
 }
 
 - (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)sourceIndexPath toIndexPath:(NSIndexPath *)destinationIndexPath {
+    [self.tableView beginUpdates];
+    
+    BOOL clearRow = ((destinationIndexPath.section == 0 && !_enabled.count) || (destinationIndexPath.section == 1 && !_disabled.count));
+    
     if (sourceIndexPath.section == 0) {
         NSString *sourceID = _enabled[sourceIndexPath.row];
         
@@ -251,7 +288,7 @@
             [_enabled insertObject:sourceID atIndex:destinationIndexPath.row];
         }
         else {
-            [_disabled insertObject:sourceID atIndex:destinationIndexPath.row];
+            [_disabled insertObject:sourceID atIndex:(clearRow ? 0 : destinationIndexPath.row)];
         }
     }
     else if (sourceIndexPath.section == 1) {
@@ -263,17 +300,29 @@
             [_disabled insertObject:sourceID atIndex:destinationIndexPath.row];
         }
         else {
-            [_enabled insertObject:sourceID atIndex:destinationIndexPath.row];
+            [_enabled insertObject:sourceID atIndex:(clearRow ? 0 : destinationIndexPath.row)];
         }
     }
+    
+    if (clearRow) {
+        NSIndexPath *remove = [NSIndexPath indexPathForRow:destinationIndexPath.section inSection:destinationIndexPath.section];
+        
+        [self.tableView deleteRowsAtIndexPaths:@[remove] withRowAnimation:UITableViewRowAnimationNone];
+    }
+    
+    BOOL insertRow = ((sourceIndexPath.section == 0 && !_enabled.count) || (sourceIndexPath.section == 1 && !_disabled.count));
+    
+    if (insertRow) {
+        NSIndexPath *add = [NSIndexPath indexPathForRow:0 inSection:sourceIndexPath.section];
+        
+        [self.tableView insertRowsAtIndexPaths:@[add] withRowAnimation:UITableViewRowAnimationFade];
+    }
+    
+    [self.tableView endUpdates];
     
     [self syncPrefs];
     
     CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFSTR("de.j-gessner.ccloader.settingschanged"),  NULL, NULL, true);
-}
-
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-    
 }
 
 @end

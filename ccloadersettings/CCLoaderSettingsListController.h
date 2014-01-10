@@ -6,8 +6,10 @@
 //  Copyright (c) 2014 Jonas Gessner. All rights reserved.
 //
 
-#import "Preferences/PSListController.h"
+#import "Preferences/PSViewController.h"
 
-@interface CCLoaderSettingsListController : PSListController
+@interface CCLoaderSettingsListController : PSViewController
+
+- (UITableView *)tableView;
 
 @end

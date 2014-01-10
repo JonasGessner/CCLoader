@@ -1,6 +1,13 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
+@protocol CCSectionDelegate <NSObject>
+
+- (void)updateStatusText:(NSString *)text;
+- (void)requestControlCenterDismissal;
+
+@end
+
 @protocol CCSection <NSObject>
 
 @required
@@ -9,10 +16,10 @@
 - (CGFloat)sectionHeight;
 
 @optional
-- (void)viewWillAppear;
-- (void)viewDidAppear;
+- (void)setDelegate:(UIViewController <CCSectionDelegate> *)delegate;
 
-- (void)viewWillDisappear;
-- (void)viewDidDisappear;
+- (void)controlCenterWillAppear;
+
+- (void)controlCenterDidDisappear;
 
 @end

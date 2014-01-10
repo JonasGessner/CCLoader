@@ -4,14 +4,17 @@
  *     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2011 by Steve Nygard.
  */
 
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+
 #import "SBControlCenterKnockoutView.h"
 
 @interface SBControlCenterSeparatorView : SBControlCenterKnockoutView
 {
 }
 
-+ (double)defaultBreadthForOrientation:(long long)arg1;
-- (_Bool)_shouldAnimatePropertyWithKey:(id)arg1;
++ (double)defaultBreadthForOrientation:(UIInterfaceOrientation)arg1;
+- (BOOL)_shouldAnimatePropertyWithKey:(id)arg1;
 
 @end
 

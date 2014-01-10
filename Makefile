@@ -12,8 +12,9 @@ CCLoader_FILES = CCLoader.xm CCSectionViewController.x CCSectionView.x ccloaders
 CCLoader_FRAMEWORKS = Foundation UIKit CoreGraphics CoreFoundation
 
 include $(THEOS_MAKE_PATH)/tweak.mk
+SUBPROJECTS += CCLoaderSettings
+include $(THEOS_MAKE_PATH)/aggregate.mk
 
 after-install::
 	install.exec "killall -9 backboardd"
-SUBPROJECTS += ccloadersettings
-include $(THEOS_MAKE_PATH)/aggregate.mk
+

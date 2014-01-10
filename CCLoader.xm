@@ -20,6 +20,7 @@
 #import "ControlCenter/SBControlCenterContainerView.h"
 #import "ControlCenter/SBControlCenterContentContainerView.h"
 #import "ControlCenter/SBControlCenterContentView.h"
+#import "ControlCenter/SBControlCenterSeparatorView.h"
 
 #define kCCLoaderStockOrderedSections @[@"com.apple.controlcenter.settings", @"com.apple.controlcenter.brightness", @"com.apple.controlcenter.media-controls", @"com.apple.controlcenter.air-stuff", @"com.apple.controlcenter.quick-launch"]
 
@@ -130,15 +131,36 @@ NS_INLINE void loadCCSections(SBControlCenterContentView *contentView) {
             NSCAssert(0, @"Something has gone really wrong!");
         }
     }
+    
+    
+    
+    NSMutableArray *separators = MSHookIvar<NSMutableArray *>(contentView, "_dividerViews");
+    
+    if (sectionViewControllers.count > 1) {
+        while (separators.count > sectionViewControllers.count-1) {
+            [[separators lastObject] removeFromSuperview];
+            [separators removeLastObject];
+        }
+        
+        while (separators.count < sectionViewControllers.count-1) {
+            SBControlCenterSeparatorView *separator = [[%c(SBControlCenterSeparatorView) alloc] initWithFrame:CGRectZero];
+            separator.alpha = 0.4f;
+            
+            [contentView addSubview:separator];
+            
+            [separators addObject:separator];
+        }
+    }
+    else {
+        for (UIView *v in separators) {
+            [v removeFromSuperview];
+        }
+        
+        [separators removeAllObjects];
+    }
 }
 
-//NS_INLINE void unloadCCSections(void) {
-//    sectionViewControllers = nil;
-//}
-
 NS_INLINE void reloadCCSections(void) {
-    //    unloadCCSections();
-    
     SBControlCenterController *controller = [%c(SBControlCenterController) sharedInstanceIfExists];
     
     NSCParameterAssert(controller);
@@ -257,6 +279,7 @@ static CCScrollView *scroller = nil;
     if (gesture.state == UIGestureRecognizerStateBegan) {
         [scroller setContentOffset:CGPointZero];
     }
+    
     %orig;
 }
 
@@ -270,8 +293,6 @@ static CCScrollView *scroller = nil;
 
 - (void)controlCenterDidDismiss {
     %orig;
-    
-    //    unloadCCSections();
     
     [scroller removeFromSuperview];
     

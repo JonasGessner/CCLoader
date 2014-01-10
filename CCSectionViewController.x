@@ -9,8 +9,6 @@
 #import "CCSectionViewController.h"
 #import "CCSectionView.h"
 
-#import "CCSection-Protocol.h"
-
 #import <objc/runtime.h>
 #include <substrate.h>
 
@@ -23,7 +21,7 @@
 
 @end
 
-%subclass CCSectionViewController : SBControlCenterSectionViewController
+%subclass CCSectionViewController : SBControlCenterSectionViewController <CCSectionDelegate>
 
 %new
 - (id)initWithBundle:(NSBundle *)bundle {
@@ -31,6 +29,10 @@
     if (self) {
         [self setBundle:bundle];
         [self setSection:[[[self.bundle principalClass] alloc] init]];
+        
+        if ([self.section respondsToSelector:@selector(setDelegate:)]) {
+            [self.section setDelegate:self];
+        }
     }
     return self;
 }
@@ -61,6 +63,25 @@
     self.view = [[%c(CCSectionView) alloc] initWithContentView:contentView];
 }
 
+
+- (void)controlCenterWillPresent {
+    %orig;
+    
+    if ([self.section respondsToSelector:@selector(controlCenterWillAppear)]) {
+        [self.section controlCenterWillAppear];
+    }
+}
+
+- (void)controlCenterDidDismiss {
+    %orig;
+    
+    if ([self.section respondsToSelector:@selector(controlCenterDidDisappear)]) {
+        [self.section controlCenterDidDisappear];
+    }
+}
+
+
+
 - (NSString *)sectionIdentifier {
     return [self.bundle objectForInfoDictionaryKey:@"CFBundleIdentifier"];
 }
@@ -69,6 +90,8 @@
     return [self.bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
 }
 
+
+
 - (BOOL)enabledForOrientation:(UIInterfaceOrientation)orientation {
     return UIInterfaceOrientationIsPortrait(orientation);
 }
@@ -76,6 +99,8 @@
 - (CGSize)contentSizeForOrientation:(UIInterfaceOrientation)orientation {
     return CGSizeMake([UIScreen mainScreen].bounds.size.width, [self.section sectionHeight]);
 }
+
+
 
 - (NSUInteger)hash {
     return [self.sectionIdentifier hash];

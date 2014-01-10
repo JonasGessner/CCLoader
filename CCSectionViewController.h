@@ -12,7 +12,9 @@
 #import "SBControlCenterSectionViewController.h"
 #import "SBControlCenterSectionView.h"
 
-@interface CCSectionViewController : SBControlCenterSectionViewController
+#import "CCSection-Protocol.h"
+
+@interface CCSectionViewController : SBControlCenterSectionViewController <CCSectionDelegate>
 
 - (id)initWithBundle:(NSBundle *)bundle;
 
