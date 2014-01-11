@@ -23,4 +23,6 @@
 
 - (NSBundle *)bundle;
 
+- (CGFloat)height;
+
 @end

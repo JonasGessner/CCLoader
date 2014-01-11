@@ -92,12 +92,17 @@
 
 
 
+%new
+- (CGFloat)height {
+    return [self.section sectionHeight];
+}
+
 - (BOOL)enabledForOrientation:(UIInterfaceOrientation)orientation {
-    return UIInterfaceOrientationIsPortrait(orientation);
+    return YES;
 }
 
 - (CGSize)contentSizeForOrientation:(UIInterfaceOrientation)orientation {
-    return CGSizeMake([UIScreen mainScreen].bounds.size.width, [self.section sectionHeight]);
+    return CGSizeMake(CGFLOAT_MAX, self.height);
 }
 
 

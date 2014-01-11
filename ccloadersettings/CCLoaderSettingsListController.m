@@ -16,6 +16,9 @@
     NSMutableOrderedSet *_disabled;
     
     NSDictionary *_displayNames;
+    
+    BOOL _dynamicMediaControls;
+    BOOL _hideSeparators;
 }
 
 @end
@@ -47,6 +50,9 @@
         [loader loadBundles];
         
         NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:kCCLoaderSettingsPath];
+        
+        _dynamicMediaControls = [prefs[@"HideMediaControls"] boolValue];
+        _hideSeparators = [prefs[@"HideSeparators"] boolValue];
         
         NSArray *enabledArray = prefs[@"EnabledSections"];
         
@@ -101,7 +107,7 @@
         
         _displayNames = displayNames.copy;
         
-        [self syncPrefs];
+        [self syncPrefs:NO];
     }
     
     return self;
@@ -161,7 +167,7 @@
     return (UITableView *)self.view;
 }
 
-- (void)syncPrefs {
+- (void)syncPrefs:(BOOL)notificate {
     NSMutableDictionary *prefs = [NSMutableDictionary dictionary];
     
     if (_enabled) {
@@ -172,16 +178,44 @@
         prefs[@"DisabledSections"] = _disabled.array;
     }
     
+    if (_dynamicMediaControls) {
+        prefs[@"HideMediaControls"] = @(YES);
+    }
+    
+    if (_hideSeparators) {
+        prefs[@"HideSeparators"] = @(YES);
+    }
+    
     [prefs.copy writeToFile:kCCLoaderSettingsPath atomically:YES];
+    
+    if (notificate) {
+        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFSTR("de.j-gessner.ccloader.settingschanged"),  NULL, NULL, true);
+    }
+}
+
+- (void)dynamicSwitched:(UISwitch *)sender {
+    _dynamicMediaControls = sender.on;
+    
+    [self syncPrefs:YES];
+}
+
+- (void)hideSeparatorsSwitched:(UISwitch *)sender {
+    _hideSeparators = sender.on;
+    
+    [self syncPrefs:YES];
 }
 
 #pragma mark - UITableViewDataSource
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return 2;
+    return 3;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    if (section == 2) {
+        return 2;
+    }
+    
     NSUInteger num = 0;
     
     if (section == 0) {
@@ -202,16 +236,24 @@
     if (section == 0) {
         return @"Enabled Sections";
     }
-    else {
+    else if (section == 1) {
         return @"Disabled Sections";
+    }
+    else if (section == 2) {
+        return @"Options";
+    }
+    else {
+        return nil;
     }
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
-    if (section == 1) {
-        return [NSString stringWithFormat:@"© Jonas Gessner %@", (2014 < kYear ? [NSString stringWithFormat:@"2014-%lu", (unsigned long)kYear] : @"2014")];
+    if (section == 2) {
+        return [NSString stringWithFormat:@"If no media is playing the media controls will not be shown in ControlCenter\n\n\n© Jonas Gessner %@", (2014 < kYear ? [NSString stringWithFormat:@"2014-%lu", (unsigned long)kYear] : @"2014")];
     }
-    return nil;
+    else {
+        return nil;
+    }
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -219,7 +261,29 @@
     
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellID forIndexPath:indexPath];
     
-    if ((indexPath.section == 0 && _enabled.count) || (indexPath.section == 1 && _disabled.count)) {
+    if (indexPath.section == 2) {
+        if (indexPath.row == 0) {
+            UISwitch *accessory = [UISwitch new];
+            accessory.on = _hideSeparators;
+            
+            [accessory addTarget:self action:@selector(hideSeparatorsSwitched:) forControlEvents:UIControlEventValueChanged];
+            
+            cell.accessoryView = accessory;
+            
+            cell.textLabel.text = @"Hide Separators";
+        }
+        else if (indexPath.row == 1) {
+            UISwitch *accessory = [UISwitch new];
+            accessory.on = _dynamicMediaControls;
+            
+            [accessory addTarget:self action:@selector(dynamicSwitched:) forControlEvents:UIControlEventValueChanged];
+            
+            cell.accessoryView = accessory;
+            
+            cell.textLabel.text = @"Dynamic Media Controls";
+        }
+    }
+    else if ((indexPath.section == 0 && _enabled.count) || (indexPath.section == 1 && _disabled.count)) {
         NSString *ID = (indexPath.section == 0 ? _enabled[indexPath.row] : _disabled[indexPath.row]);
         
         NSString *displayName = _displayNames[ID];
@@ -252,7 +316,7 @@
 }
 
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
-    return YES;
+    return (indexPath.section < 2);
 }
 
 - (BOOL)tableView:(UITableView *)tableView shouldHighlightRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -260,13 +324,16 @@
 }
 
 - (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath {
-    return ((indexPath.section == 0 && _enabled.count) || (indexPath.section == 1 && _disabled.count));
+    return (indexPath.section < 2 && ((indexPath.section == 0 && _enabled.count) || (indexPath.section == 1 && _disabled.count)));
 }
 
 #pragma mark - UITableViewDelegate
 
 - (NSIndexPath *)tableView:(UITableView *)tableView targetIndexPathForMoveFromRowAtIndexPath:(NSIndexPath *)sourceIndexPath toProposedIndexPath:(NSIndexPath *)proposedDestinationIndexPath {
-    if ((proposedDestinationIndexPath.section == 0 && !_enabled.count) || (proposedDestinationIndexPath.section == 1 && !_disabled.count)) {
+    if (proposedDestinationIndexPath.section > 1) {
+        return sourceIndexPath;
+    }
+    else if ((proposedDestinationIndexPath.section == 0 && !_enabled.count) || (proposedDestinationIndexPath.section == 1 && !_disabled.count)) {
         return [NSIndexPath indexPathForRow:0 inSection:proposedDestinationIndexPath.section];
     }
     else {
@@ -320,9 +387,7 @@
     
     [self.tableView endUpdates];
     
-    [self syncPrefs];
-    
-    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFSTR("de.j-gessner.ccloader.settingschanged"),  NULL, NULL, true);
+    [self syncPrefs:YES];
 }
 
 @end
