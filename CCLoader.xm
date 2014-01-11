@@ -357,20 +357,20 @@ NS_INLINE UIScrollView *scroller(void) {
 - (CGFloat)contentHeightForOrientation:(UIInterfaceOrientation)orientation {
     landscape = UIInterfaceOrientationIsLandscape(orientation);
     
-    CGFloat height = kGrabberHeight;
+	CGFloat height = %orig;
     
     if (landscape) {
+		realHeight = kGrabberHeight;
+
         for (NSUInteger i = 1; i < landscapeSectionViewControllers.count-1; i++) {
             SBControlCenterSectionViewController *controller = landscapeSectionViewControllers[i];
             
-            height += [controller contentSizeForOrientation:orientation].height+1.5f;
+            realHeight += [controller contentSizeForOrientation:orientation].height+1.5f;
+			
+
         }
-    }
-    else {
-        height = %orig;
-    }
-    
-    realHeight = height;
+    } else
+		realHeight = %orig;
     
     CGFloat screenHeight = self.view.frame.size.height;
     
