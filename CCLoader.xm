@@ -43,6 +43,7 @@ static NSMutableArray *landscapeStrippedSectionViewControllers = nil;
 
 static BOOL hideSeparators = NO;
 static BOOL hideMediaControlsInCurrentSession = NO;
+static BOOL godDamnCCTogglesFix = NO;
 
 NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCenterContentView *contentView, NSUInteger *mediaControlsIndex) {
     CCBundleLoader *loader = [CCBundleLoader sharedInstance];
@@ -219,31 +220,7 @@ NS_INLINE UIScrollView *scroller(void) {
 
 #define kGrabberHeight 25.0f
 
-
 %group main
-
-%hook SBControlCenterContentContainerView
-
-- (void)layoutSubviews {
-    %orig;
-    
-    [UIView performWithoutAnimation:^{
-        if (scroller().superview != self) {
-            [self addSubview:scroller()];
-        }
-        
-        CGRect frame = self.bounds;
-        
-        frame.origin.y = kGrabberHeight;
-        frame.size.height = fakeHeight-kGrabberHeight;
-        scroller().frame = frame;
-        
-        frame.size.height = realHeight-kGrabberHeight;
-        scroller().contentSize = frame.size;
-    }];
-}
-
-%end
 
 %hook SBControlCenterSectionView
 
@@ -252,7 +229,20 @@ NS_INLINE UIScrollView *scroller(void) {
         frame.size.height = fakeHeight;
     }
     else {
-        frame.origin.y -= kGrabberHeight;
+        if ([self isKindOfClass:%c(SBCCButtonLayoutView)]) {
+            if (!godDamnCCTogglesFix) {
+                if (!CGRectIsEmpty(frame) && frame.origin.y-kGrabberHeight < 0.0f) {
+                    godDamnCCTogglesFix = YES;
+                }
+            }
+            
+            if (!godDamnCCTogglesFix) {
+                frame.origin.y -= kGrabberHeight;
+            }
+        }
+        else {
+            frame.origin.y -= kGrabberHeight;
+        }
     }
     
     %orig;
@@ -271,6 +261,23 @@ NS_INLINE UIScrollView *scroller(void) {
 
 %hook SBControlCenterContentView
 
+- (void)layoutSubviews {
+    %orig;
+    
+    if (scroller().superview != self) {
+        [self addSubview:scroller()];
+    }
+    
+    CGRect frame = self.bounds;
+    
+    frame.origin.y = kGrabberHeight;
+    frame.size.height = fakeHeight-kGrabberHeight;
+    scroller().frame = frame;
+    
+    frame.size.height = realHeight-kGrabberHeight;
+    scroller().contentSize = frame.size;
+}
+
 - (void)_removeSectionController:(SBControlCenterSectionViewController *)controller {
     %orig;
     [controller.view removeFromSuperview];
@@ -288,11 +295,11 @@ NS_INLINE UIScrollView *scroller(void) {
 - (void)addSubview:(UIView *)subview {
     if ([subview isKindOfClass:%c(SBControlCenterSectionView)]) {
         if (landscape) {
-            if ([subview isKindOfClass:%c(SBCCButtonLayoutView)]) {
-                %orig;
+            if (![subview isKindOfClass:%c(SBCCButtonLayoutView)]) {
+                [scroller() addSubview:subview];
             }
             else {
-                [scroller() addSubview:subview];
+                %orig;
             }
         }
         else {
@@ -303,7 +310,7 @@ NS_INLINE UIScrollView *scroller(void) {
         [scroller() addSubview:subview];
     }
     else {
-         %orig;
+        %orig;
     }
 }
 
@@ -357,28 +364,30 @@ NS_INLINE UIScrollView *scroller(void) {
 - (CGFloat)contentHeightForOrientation:(UIInterfaceOrientation)orientation {
     landscape = UIInterfaceOrientationIsLandscape(orientation);
     
-    CGFloat height = kGrabberHeight;
+    CGFloat height = %orig;
     
     if (landscape) {
+        realHeight = kGrabberHeight;
+        
         for (NSUInteger i = 1; i < landscapeSectionViewControllers.count-1; i++) {
             SBControlCenterSectionViewController *controller = landscapeSectionViewControllers[i];
             
-            height += [controller contentSizeForOrientation:orientation].height+1.5f;
+            realHeight += [controller contentSizeForOrientation:orientation].height+(i == 1 ? 1.5f : 0.0f);
         }
+        
+        fakeHeight = height;
     }
     else {
-        height = %orig;
+        realHeight = height;
+        
+        CGFloat screenHeight = self.view.frame.size.height;
+        
+        if (height > screenHeight) {
+            height = screenHeight;
+        }
+        
+        fakeHeight = height;
     }
-    
-    realHeight = height;
-    
-    CGFloat screenHeight = self.view.frame.size.height;
-    
-    if (height > screenHeight) {
-        height = screenHeight;
-    }
-    
-    fakeHeight = height;
     
     return height;
 }
@@ -392,14 +401,18 @@ NS_INLINE UIScrollView *scroller(void) {
         [contentView _removeSectionController:contentView.mediaControlsSection];
     }
     
-    [contentView _removeSectionController:contentView.settingsSection];
-    [contentView _removeSectionController:contentView.quickLaunchSection];
-    
     %orig;
 }
 
 - (void)controlCenterDidDismiss {
     %orig;
+    
+    if (landscape) {
+        SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(self, "_contentView");
+        
+        [contentView _removeSectionController:contentView.settingsSection];
+        [contentView _removeSectionController:contentView.quickLaunchSection];
+    }
     
     [scroller() removeFromSuperview];
     
