@@ -25,10 +25,6 @@
 
 #import "SBMediaController.h"
 
-#define kCCLoaderStockOrderedSections @[@"com.apple.controlcenter.settings", @"com.apple.controlcenter.brightness", @"com.apple.controlcenter.media-controls", @"com.apple.controlcenter.air-stuff", @"com.apple.controlcenter.quick-launch"]
-
-#define kCCLoaderStockSections [NSSet setWithArray:kCCLoaderStockOrderedSections]
-
 #define kCCLoaderSettingsPath [[NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) firstObject] stringByAppendingPathComponent:@"Preferences/de.j-gessner.ccloader.plist"]
 
 #define iPad (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
@@ -54,52 +50,68 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCe
     
     NSMutableSet *bundles = loader.bundles.mutableCopy;
     
+    NSDictionary *replacingBundles = loader.replacingBundles;
+    
     if (!customSectionViewControllers) {
         customSectionViewControllers = [NSMutableDictionary dictionary];
     }
     
     NSMutableSet *usedCustomSections = [NSMutableSet setWithArray:customSectionViewControllers.allKeys];
     
+    
+    void (^loadCustomSection)(NSString *sectionIdentifier, NSBundle *loadingBundle) = ^(NSString *sectionIdentifier, NSBundle *loadingBundle) {
+        CCSectionViewController *sectionViewController = customSectionViewControllers[sectionIdentifier];
+        
+        if (!sectionViewController) {
+            sectionViewController = [[%c(CCSectionViewController) alloc] initWithBundle:loadingBundle];
+            customSectionViewControllers[sectionIdentifier] = sectionViewController;
+        }
+        
+        [usedCustomSections removeObject:sectionIdentifier];
+        
+        [_sectionViewControllers addObject:sectionViewController];
+        
+        [bundles removeObject:loadingBundle];
+    };
+    
     for (NSString *sectionID in IDs) {
         if ([stockLayout containsObject:sectionID]) {
-            if ([sectionID isEqualToString:@"com.apple.controlcenter.settings"]) {
-                [_sectionViewControllers addObject:contentView.settingsSection];
-            }
-            else if ([sectionID isEqualToString:@"com.apple.controlcenter.brightness"]) {
-                [_sectionViewControllers addObject:contentView.brightnessSection];
-            }
-            else if ([sectionID isEqualToString:@"com.apple.controlcenter.media-controls"]) {
+            if ([sectionID isEqualToString:@"com.apple.controlcenter.media-controls"]) {
                 if (mediaControlsIndex) {
                     *mediaControlsIndex = _sectionViewControllers.count;
                 }
-                
-                [_sectionViewControllers addObject:contentView.mediaControlsSection];
             }
-            else if ([sectionID isEqualToString:@"com.apple.controlcenter.air-stuff"]) {
-                [_sectionViewControllers addObject:contentView.airplaySection];
-            }
-            else if ([sectionID isEqualToString:@"com.apple.controlcenter.quick-launch"]) {
-                [_sectionViewControllers addObject:contentView.quickLaunchSection];
+            
+            NSBundle *replacingBundle = replacingBundles[sectionID];
+            
+            if (replacingBundle) {
+                loadCustomSection(sectionID, replacingBundle);
             }
             else {
-                NSCAssert(0, @"Something has gone really wrong!");
+                if ([sectionID isEqualToString:@"com.apple.controlcenter.settings"]) {
+                    [_sectionViewControllers addObject:contentView.settingsSection];
+                }
+                else if ([sectionID isEqualToString:@"com.apple.controlcenter.brightness"]) {
+                    [_sectionViewControllers addObject:contentView.brightnessSection];
+                }
+                else if ([sectionID isEqualToString:@"com.apple.controlcenter.media-controls"]) {
+                    [_sectionViewControllers addObject:contentView.mediaControlsSection];
+                }
+                else if ([sectionID isEqualToString:@"com.apple.controlcenter.air-stuff"]) {
+                    [_sectionViewControllers addObject:contentView.airplaySection];
+                }
+                else if ([sectionID isEqualToString:@"com.apple.controlcenter.quick-launch"]) {
+                    [_sectionViewControllers addObject:contentView.quickLaunchSection];
+                }
+                else {
+                    NSCAssert(0, @"Something has gone really wrong!");
+                }
             }
         }
         else {
             for (NSBundle *bundle in bundles) {
                 if ([bundle.bundleIdentifier isEqualToString:sectionID]) {
-                    CCSectionViewController *sectionViewController = customSectionViewControllers[sectionID];
-                    
-                    if (!sectionViewController) {
-                        sectionViewController = [[%c(CCSectionViewController) alloc] initWithBundle:bundle];
-                        customSectionViewControllers[sectionID] = sectionViewController;
-                    }
-                    
-                    [usedCustomSections removeObject:sectionID];
-                    
-                    [_sectionViewControllers addObject:sectionViewController];
-                    
-                    [bundles removeObject:bundle];
+                    loadCustomSection(sectionID, bundle);
                     break;
                 }
             }

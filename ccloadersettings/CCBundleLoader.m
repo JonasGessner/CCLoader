@@ -11,7 +11,7 @@
 #import "CCSection-Protocol.h"
 
 
-#define kSectionBundlePath @"/Library/CCLoader/Bundles"
+#define kCCSectionBundlePath @"/Library/CCLoader/Bundles"
 
 @implementation CCBundleLoader
 
@@ -29,20 +29,35 @@
 - (void)loadBundles {
     NSMutableSet *bundles = [NSMutableSet set];
     
-    NSArray *contents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:kSectionBundlePath error:nil];
+    NSMutableDictionary *replacingBundles = [NSMutableDictionary dictionary];
+    
+    NSArray *contents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:kCCSectionBundlePath error:nil];
+    
+    NSSet *stockSections = kCCLoaderStockSections;
     
     for (NSString *file in contents) {
         if ([file.pathExtension isEqualToString:@"bundle"]) {
-            NSString *path = [kSectionBundlePath stringByAppendingPathComponent:file];
+            NSString *path = [kCCSectionBundlePath stringByAppendingPathComponent:file];
             
             NSBundle *bundle = [NSBundle bundleWithPath:path];
             
-            Class principal = [bundle principalClass];
+            Class principalClass = [bundle principalClass];
             
-            if ([principal conformsToProtocol:@protocol(CCSection)]) {
-                [bundles addObject:bundle];
+            if ([principalClass conformsToProtocol:@protocol(CCSection)]) {
+                NSString *replaceID = [bundle objectForInfoDictionaryKey:kCCLoaderReplaceStockSectionInfoDicationaryKey];
+                
+                if ([stockSections containsObject:replaceID]) {
+                    replacingBundles[replaceID] = bundle;
+                }
+                else {
+                    [bundles addObject:bundle];
+                }
             }
         }
+    }
+    
+    if (replacingBundles.count) {
+        _replacingBundles = replacingBundles.copy;
     }
     
     if (bundles.count) {
@@ -52,6 +67,7 @@
 
 - (void)unloadBundles {
     _bundles = nil;
+    _replacingBundles = nil;
 }
 
 
