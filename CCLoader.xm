@@ -510,8 +510,19 @@ NS_INLINE void reloadCCSections(void) {
         
         [enabledSections addObjectsFromArray:allIDs.array];
         
-        prefs[@"EnabledSections"] = enabledSections.copy;
-        prefs[@"DisabledSections"] = disabledSections.copy;
+        if (enabledSections.count) {
+            prefs[@"EnabledSections"] = enabledSections.copy;
+        }
+        else {
+            [prefs removeObjectForKey:@"EnabledSections"];
+        }
+        
+        if (disabledSections.count) {
+            prefs[@"DisabledSections"] = disabledSections.copy;
+        }
+        else {
+            [prefs removeObjectForKey:@"DisabledSections"];
+        }
         
         [prefs writeToFile:kCCLoaderSettingsPath atomically:YES];
         
