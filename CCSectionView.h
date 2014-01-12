@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-#import "SBControlCenterSectionView.h"
+#import "ControlCenter/SBControlCenterSectionView.h"
 
 @interface CCSectionView : SBControlCenterSectionView
 

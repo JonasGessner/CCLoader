@@ -9,10 +9,10 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-#import "SBControlCenterSectionViewController.h"
-#import "SBControlCenterSectionView.h"
+#import "ControlCenter/SBControlCenterSectionViewController.h"
+#import "ControlCenter/SBControlCenterSectionView.h"
 
-#import "CCSection-Protocol.h"
+#import "CCLoaderSettings/CCSection-Protocol.h"
 
 @interface CCSectionViewController : SBControlCenterSectionViewController <CCSectionDelegate>
 

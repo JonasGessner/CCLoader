@@ -4,29 +4,27 @@
  *     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2011 by Steve Nygard.
  */
 
-#import "UIViewController.h"
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
-#import "SBControlCenterObserver-Protocol.h"
+#import "SBControlCenterSectionViewControllerDelegate-Protocol.h"
 
-@class NSString;
-
-@interface SBControlCenterSectionViewController : UIViewController <SBControlCenterObserver>
-{
-    id <SBControlCenterSectionViewControllerDelegate> _delegate;
-}
+@interface SBControlCenterSectionViewController : UIViewController
 
 + (Class)viewClass;
-@property(nonatomic) id <SBControlCenterSectionViewControllerDelegate> delegate; // @synthesize delegate=_delegate;
+
+@property (nonatomic) id <SBControlCenterSectionViewControllerDelegate> delegate;
+
 - (void)controlCenterDidFinishTransition;
 - (void)controlCenterWillBeginTransition;
 - (void)controlCenterDidDismiss;
 - (void)controlCenterWillPresent;
 - (void)noteSettingsDidUpdate:(id)arg1;
-- (struct CGSize)contentSizeForOrientation:(long long)arg1;
-- (_Bool)enabledForOrientation:(long long)arg1;
-- (id)view;
-@property(readonly, nonatomic) NSString *sectionIdentifier;
-- (void)loadView;
+
+- (CGSize)contentSizeForOrientation:(UIInterfaceOrientation)arg1;
+- (BOOL)enabledForOrientation:(UIInterfaceOrientation)arg1;
+
+@property (readonly, nonatomic) NSString *sectionIdentifier;
 
 @end
 

@@ -7,10 +7,12 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
+#import "SBControlCenterSectionViewControllerDelegate-Protocol.h"
+
 
 @class NSMutableArray, SBControlCenterContainerView, SBControlCenterContentView, SBControlCenterSettings, UIPanGestureRecognizer, UITapGestureRecognizer;
 
-@interface SBControlCenterViewController : UIViewController /*<UIGestureRecognizerDelegate, SBControlCenterSectionViewControllerDelegate, _UISettingsKeyObserver, _UIBackdropViewObserver, SBControlCenterObserver>*/
+@interface SBControlCenterViewController : UIViewController <SBControlCenterSectionViewControllerDelegate> /*<UIGestureRecognizerDelegate, SBControlCenterSectionViewControllerDelegate, _UISettingsKeyObserver, _UIBackdropViewObserver, SBControlCenterObserver>*/
 {
     /*SBControlCenterContainerView *_containerView;
     SBControlCenterContentView *_contentView;

@@ -4,15 +4,16 @@
  *     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2011 by Steve Nygard.
  */
 
-#import "UIView.h"
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
-@interface SBControlCenterSectionView : UIView
-{
+@interface SBControlCenterSectionView : UIView {
     double _edgePadding;
 }
 
-@property(nonatomic) double edgePadding; // @synthesize edgePadding=_edgePadding;
-- (_Bool)_shouldAnimatePropertyWithKey:(id)arg1;
+@property (nonatomic) double edgePadding;
+
+- (BOOL)_shouldAnimatePropertyWithKey:(id)arg1;
 
 @end
 

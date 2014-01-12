@@ -4,13 +4,13 @@
  *     class-dump is Copyright (C) 1997-1998, 2000-2001, 2004-2011 by Steve Nygard.
  */
 
-#import "NSObject-Protocol.h"
+#import <Foundation/Foundation.h>
 
 @protocol SBControlCenterViewControllerDelegate <NSObject>
 - (void)controlCenterViewController:(id)arg1 backdropViewDidUpdate:(id)arg2;
 - (void)controlCenterViewController:(id)arg1 handlePan:(id)arg2;
 - (void)controlCenterViewController:(id)arg1 handleTap:(id)arg2;
-- (_Bool)controlCenterViewController:(id)arg1 canHandleGestureRecognizer:(id)arg2;
+- (BOOL)controlCenterViewController:(id)arg1 canHandleGestureRecognizer:(id)arg2;
 - (void)controlCenterViewControllerWantsDismissal:(id)arg1;
 @end
 

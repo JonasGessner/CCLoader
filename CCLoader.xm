@@ -83,7 +83,7 @@ NS_INLINE SBControlCenterSectionViewController *stockSectionViewControllerForID(
     }
 }
 
-NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCenterContentView *contentView, NSUInteger *mediaControlsIndex) {
+NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCenterViewController *viewController, SBControlCenterContentView *contentView, NSUInteger *mediaControlsIndex) {
     CCBundleLoader *loader = [CCBundleLoader sharedInstance];
     
     NSMutableArray *_sectionViewControllers = [NSMutableArray arrayWithCapacity:IDs.count];
@@ -106,6 +106,7 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCe
         
         if (!sectionViewController) {
             sectionViewController = [[%c(CCSectionViewController) alloc] initWithBundle:loadingBundle];
+            [sectionViewController setDelegate:viewController];
             customSectionViewControllers[sectionIdentifier] = sectionViewController;
         }
         
@@ -153,8 +154,9 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCe
     return _sectionViewControllers;
 }
 
-NS_INLINE void loadCCSections(SBControlCenterContentView *contentView) {
+NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBControlCenterContentView *contentView) {
     NSCParameterAssert(contentView);
+    NSCParameterAssert(viewController);
     
     strippedSectionViewControllers = nil;
     
@@ -187,9 +189,9 @@ NS_INLINE void loadCCSections(SBControlCenterContentView *contentView) {
         [contentView _removeSectionController:sectionViewController];
     }
     
-    sectionViewControllers = sectionViewControllersForIDs(sectionsToLoad, contentView, &mediaControlsIndex);
+    sectionViewControllers = sectionViewControllersForIDs(sectionsToLoad, viewController, contentView, &mediaControlsIndex);
     
-    landscapeSectionViewControllers = sectionViewControllersForIDs(landscapeSectionsToLoad.array, contentView, &landscapeMediaControlsIndex);
+    landscapeSectionViewControllers = sectionViewControllersForIDs(landscapeSectionsToLoad.array, viewController, contentView, &landscapeMediaControlsIndex);
     
     if (hideMediaControlsIfStopped) {
         if (mediaControlsIndex != NSNotFound) {
@@ -235,10 +237,11 @@ NS_INLINE void reloadCCSections(void) {
     
     NSCParameterAssert(controller);
     
+    SBControlCenterViewController *viewController = MSHookIvar<SBControlCenterViewController *>(controller, "_viewController");
     
-    SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(MSHookIvar<SBControlCenterViewController *>(controller, "_viewController"), "_contentView");
+    SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(viewController, "_contentView");
     
-    loadCCSections(contentView);
+    loadCCSections(viewController, contentView);
 }
 
 
@@ -376,9 +379,11 @@ NS_INLINE void reloadCCSections(void) {
     SBControlCenterController *controller = %orig;
     
     if (controller && !sectionViewControllers) {
-        SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(MSHookIvar<SBControlCenterViewController *>(controller, "_viewController"), "_contentView");
+        SBControlCenterViewController *viewController = MSHookIvar<SBControlCenterViewController *>(controller, "_viewController");
         
-        loadCCSections(contentView);
+        SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(viewController, "_contentView");
+        
+        loadCCSections(viewController, contentView);
     }
     
     return controller;
@@ -421,6 +426,8 @@ NS_INLINE void reloadCCSections(void) {
 }
 
 - (void)controlCenterWillPresent {
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"CCWillAppearNotification" object:nil];
+    
     hideMediaControlsInCurrentSession = (strippedSectionViewControllers && ![[%c(SBMediaController) sharedInstance] nowPlayingApplication]);
     
     SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(self, "_contentView");
@@ -448,6 +455,8 @@ NS_INLINE void reloadCCSections(void) {
     fakeHeight = 0.0f;
     
     landscape = NO;
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"CCDidDisappearNotification" object:nil];
 }
 
 %end

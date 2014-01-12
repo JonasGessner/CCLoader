@@ -27,6 +27,9 @@
 - (id)initWithBundle:(NSBundle *)bundle {
     self = [self init];
     if (self) {
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(controlCenterWillAppear) name:@"CCWillAppearNotification" object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(controlCenterDidDisappear) name:@"CCDidDisappearNotification" object:nil];
+        
         [self setBundle:bundle];
         [self setSection:[[[self.bundle principalClass] alloc] init]];
         
@@ -35,6 +38,21 @@
         }
     }
     return self;
+}
+
+%new
+- (void)updateStatusText:(NSString *)text {
+    [self.delegate section:self updateStatusText:text reason:@"de.j-gessner.ccloader.updatestatustext"];
+}
+
+%new
+- (void)requestControlCenterDismissal {
+    if (!self.view.superview) {
+        NSLog(@"[CCLoader] ERROR: %@ was called too early", NSStringFromSelector(_cmd));
+    }
+    else {
+        [self.delegate sectionWantsControlCenterDismissal:self];
+    }
 }
 
 %new
@@ -73,18 +91,15 @@
     self.view = [[%c(CCSectionView) alloc] initWithContentView:contentView];
 }
 
-
-- (void)controlCenterWillPresent {
-    %orig;
-    
+%new
+- (void)controlCenterWillAppear {
     if ([self.section respondsToSelector:@selector(controlCenterWillAppear)]) {
         [self.section controlCenterWillAppear];
     }
 }
 
-- (void)controlCenterDidDismiss {
-    %orig;
-    
+%new
+- (void)controlCenterDidDisappear {
     if ([self.section respondsToSelector:@selector(controlCenterDidDisappear)]) {
         [self.section controlCenterDidDisappear];
     }
