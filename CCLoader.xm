@@ -161,7 +161,7 @@ NS_INLINE void loadCCSections(SBControlCenterContentView *contentView) {
     NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:kCCLoaderSettingsPath];
     
     NSArray *sectionsToLoad = prefs[@"EnabledSections"];
-
+    
     if (!sectionsToLoad) {
         sectionsToLoad = kCCLoaderStockOrderedSections;
     }
@@ -177,7 +177,7 @@ NS_INLINE void loadCCSections(SBControlCenterContentView *contentView) {
     BOOL hideMediaControlsIfStopped = [prefs[@"HideMediaControls"] boolValue];
     hideSeparators = [prefs[@"HideSeparators"] boolValue];
     
-
+    
     
     NSUInteger mediaControlsIndex = NSNotFound;
     NSUInteger landscapeMediaControlsIndex = NSNotFound;
@@ -313,10 +313,10 @@ NS_INLINE void reloadCCSections(void) {
 
 //- (NSArray *)subviews {
 //    NSMutableArray *subviews = %orig.mutableCopy;
-//    
+//
 //    [subviews removeObjectIdenticalTo:scroller()];
 //    [subviews addObjectsFromArray:scroller().subviews];
-//    
+//
 //    return subviews.copy;
 //}
 
