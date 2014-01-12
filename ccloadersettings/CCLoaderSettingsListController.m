@@ -54,21 +54,11 @@
         _dynamicMediaControls = [prefs[@"HideMediaControls"] boolValue];
         _hideSeparators = [prefs[@"HideSeparators"] boolValue];
         
-        NSArray *enabledArray = prefs[@"EnabledSections"];
-        
-        if (!enabledArray) {
-            _enabled = [NSMutableOrderedSet orderedSetWithArray:kCCLoaderStockOrderedSections];
-        }
-        else {
-            _enabled = [NSMutableOrderedSet orderedSetWithArray:enabledArray];
-        }
+        _enabled = [NSMutableOrderedSet orderedSetWithArray:prefs[@"EnabledSections"]];
         
         _disabled = [NSMutableOrderedSet orderedSetWithArray:prefs[@"DisabledSections"]];
         
         NSMutableDictionary *displayNames = [kCCLoaderStockDisplayNames mutableCopy];
-        
-        NSMutableSet *enabledSet = (_enabled.count ? _enabled.set.mutableCopy : nil);
-        NSMutableSet *disabledSet = (_disabled.count ? _disabled.set.mutableCopy : nil);
         
         for (NSBundle *bundle in loader.bundles) {
             NSString *ID = bundle.bundleIdentifier;
@@ -77,37 +67,9 @@
             if (displayName) {
                 displayNames[ID] = displayName;
             }
-            
-            if ([enabledSet containsObject:ID]) {
-                [enabledSet removeObject:ID];
-            }
-            else if ([disabledSet containsObject:ID]) {
-                [disabledSet removeObject:ID];
-            }
-            else {
-                [_disabled addObject:ID];
-            }
-        }
-        
-        NSSet *stockIDs = kCCLoaderStockSections;
-        
-        //Remove deleted bundles:
-        
-        for (NSString *leftOver in enabledSet) {
-            if (![stockIDs containsObject:leftOver]) {
-                [_enabled removeObject:leftOver];
-            }
-        }
-        
-        for (NSString *leftOver in disabledSet) {
-            if (![stockIDs containsObject:leftOver]) {
-                [_disabled removeObject:leftOver];
-            }
         }
         
         _displayNames = displayNames.copy;
-        
-        [self syncPrefs:NO];
     }
     
     return self;

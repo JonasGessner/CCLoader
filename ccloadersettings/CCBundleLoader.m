@@ -29,6 +29,8 @@
 - (void)loadBundles {
     NSMutableSet *bundles = [NSMutableSet set];
     
+    NSMutableSet *bundleIDs = [NSMutableSet set];
+    
     NSMutableDictionary *replacingBundles = [NSMutableDictionary dictionary];
     
     NSArray *contents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:kCCSectionBundlePath error:nil];
@@ -50,6 +52,7 @@
                     replacingBundles[replaceID] = bundle;
                 }
                 else {
+                    [bundleIDs addObject:bundle.bundleIdentifier];
                     [bundles addObject:bundle];
                 }
             }
@@ -61,12 +64,14 @@
     }
     
     if (bundles.count) {
+        _bundleIDs = bundleIDs.copy;
         _bundles = bundles.copy;
     }
 }
 
 - (void)unloadBundles {
     _bundles = nil;
+    _bundleIDs = nil;
     _replacingBundles = nil;
 }
 

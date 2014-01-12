@@ -38,6 +38,16 @@
 }
 
 %new
+- (void)setReplacingSectionViewController:(SBControlCenterSectionViewController *)controller {
+    objc_setAssociatedObject(self, @selector(replacingSection), controller, OBJC_ASSOCIATION_ASSIGN);
+}
+
+%new
+- (SBControlCenterSectionViewController *)replacingSectionViewController {
+    return objc_getAssociatedObject(self, @selector(replacingSection));
+}
+
+%new
 - (void)setBundle:(NSBundle *)bundle {
     objc_setAssociatedObject(self, @selector(bundle), bundle, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
@@ -102,7 +112,14 @@
 }
 
 - (CGSize)contentSizeForOrientation:(UIInterfaceOrientation)orientation {
-    return CGSizeMake(CGFLOAT_MAX, self.height);
+    SBControlCenterSectionViewController *replacingSection = self.replacingSectionViewController;
+    
+    if (replacingSection) {
+        return [replacingSection contentSizeForOrientation:orientation];
+    }
+    else {
+        return CGSizeMake(CGFLOAT_MAX, self.height);
+    }
 }
 
 

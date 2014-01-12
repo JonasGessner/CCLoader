@@ -18,11 +18,15 @@
 
 - (id)initWithBundle:(NSBundle *)bundle;
 
+- (void)setReplacingSectionViewController:(SBControlCenterSectionViewController *)controller;
+- (SBControlCenterSectionViewController *)replacingSectionViewController;
+
 - (NSString *)sectionName;
 - (NSString *)sectionIdentifier;
 
 - (NSBundle *)bundle;
 
+//Unused when replacing a stock section
 - (CGFloat)height;
 
 @end

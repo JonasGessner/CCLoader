@@ -29,6 +29,8 @@
 
 #define iPad (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
 
+#define kCCGrabberHeight 25.0f
+
 static NSMutableDictionary *customSectionViewControllers = nil;
 
 static NSMutableArray *sectionViewControllers = nil;
@@ -40,6 +42,46 @@ static NSMutableArray *landscapeStrippedSectionViewControllers = nil;
 static BOOL hideSeparators = NO;
 static BOOL hideMediaControlsInCurrentSession = NO;
 static BOOL godDamnCCTogglesFix = NO;
+
+
+static BOOL landscape = NO;
+
+static CGFloat realHeight = 0.0f;
+static CGFloat fakeHeight = 0.0f;
+
+static CCScrollView *_scroller = nil;
+
+NS_INLINE UIScrollView *scroller(void) {
+    if (!_scroller) {
+        _scroller = [[CCScrollView alloc] init];
+        _scroller.scrollsToTop = NO;
+    }
+    
+    return _scroller;
+}
+
+#pragma mark - Helper Functions
+
+NS_INLINE SBControlCenterSectionViewController *stockSectionViewControllerForID(SBControlCenterContentView *contentView, NSString *sectionID) {
+    if ([sectionID isEqualToString:@"com.apple.controlcenter.settings"]) {
+        return (SBControlCenterSectionViewController *)contentView.settingsSection;
+    }
+    else if ([sectionID isEqualToString:@"com.apple.controlcenter.brightness"]) {
+        return (SBControlCenterSectionViewController *)contentView.brightnessSection;
+    }
+    else if ([sectionID isEqualToString:@"com.apple.controlcenter.media-controls"]) {
+        return (SBControlCenterSectionViewController *)contentView.mediaControlsSection;
+    }
+    else if ([sectionID isEqualToString:@"com.apple.controlcenter.air-stuff"]) {
+        return (SBControlCenterSectionViewController *)contentView.airplaySection;
+    }
+    else if ([sectionID isEqualToString:@"com.apple.controlcenter.quick-launch"]) {
+        return (SBControlCenterSectionViewController *)contentView.quickLaunchSection;
+    }
+    else {
+        return nil;
+    }
+}
 
 NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCenterContentView *contentView, NSUInteger *mediaControlsIndex) {
     CCBundleLoader *loader = [CCBundleLoader sharedInstance];
@@ -59,7 +101,7 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCe
     NSMutableSet *usedCustomSections = [NSMutableSet setWithArray:customSectionViewControllers.allKeys];
     
     
-    void (^loadCustomSection)(NSString *sectionIdentifier, NSBundle *loadingBundle) = ^(NSString *sectionIdentifier, NSBundle *loadingBundle) {
+    CCSectionViewController *(^loadCustomSection)(NSString *sectionIdentifier, NSBundle *loadingBundle) = ^(NSString *sectionIdentifier, NSBundle *loadingBundle) {
         CCSectionViewController *sectionViewController = customSectionViewControllers[sectionIdentifier];
         
         if (!sectionViewController) {
@@ -72,6 +114,8 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCe
         [_sectionViewControllers addObject:sectionViewController];
         
         [bundles removeObject:loadingBundle];
+        
+        return sectionViewController;
     };
     
     for (NSString *sectionID in IDs) {
@@ -85,27 +129,11 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCe
             NSBundle *replacingBundle = replacingBundles[sectionID];
             
             if (replacingBundle) {
-                loadCustomSection(sectionID, replacingBundle);
+                CCSectionViewController *section = loadCustomSection(sectionID, replacingBundle);
+                [section setReplacingSectionViewController:stockSectionViewControllerForID(contentView, sectionID)];
             }
             else {
-                if ([sectionID isEqualToString:@"com.apple.controlcenter.settings"]) {
-                    [_sectionViewControllers addObject:contentView.settingsSection];
-                }
-                else if ([sectionID isEqualToString:@"com.apple.controlcenter.brightness"]) {
-                    [_sectionViewControllers addObject:contentView.brightnessSection];
-                }
-                else if ([sectionID isEqualToString:@"com.apple.controlcenter.media-controls"]) {
-                    [_sectionViewControllers addObject:contentView.mediaControlsSection];
-                }
-                else if ([sectionID isEqualToString:@"com.apple.controlcenter.air-stuff"]) {
-                    [_sectionViewControllers addObject:contentView.airplaySection];
-                }
-                else if ([sectionID isEqualToString:@"com.apple.controlcenter.quick-launch"]) {
-                    [_sectionViewControllers addObject:contentView.quickLaunchSection];
-                }
-                else {
-                    NSCAssert(0, @"Something has gone really wrong!");
-                }
+                [_sectionViewControllers addObject:stockSectionViewControllerForID(contentView, sectionID)];
             }
         }
         else {
@@ -214,23 +242,9 @@ NS_INLINE void reloadCCSections(void) {
 }
 
 
-static BOOL landscape = NO;
 
-static CGFloat realHeight = 0.0f;
-static CGFloat fakeHeight = 0.0f;
 
-static CCScrollView *_scroller = nil;
-
-NS_INLINE UIScrollView *scroller(void) {
-    if (!_scroller) {
-        _scroller = [[CCScrollView alloc] init];
-        _scroller.scrollsToTop = NO;
-    }
-    
-    return _scroller;
-}
-
-#define kGrabberHeight 25.0f
+#pragma mark - Swizzles
 
 %group main
 
@@ -243,17 +257,17 @@ NS_INLINE UIScrollView *scroller(void) {
     else {
         if ([self isKindOfClass:%c(SBCCButtonLayoutView)]) {
             if (!godDamnCCTogglesFix) {
-                if (!CGRectIsEmpty(frame) && frame.origin.y-kGrabberHeight < 0.0f) {
+                if (!CGRectIsEmpty(frame) && frame.origin.y-kCCGrabberHeight < 0.0f) {
                     godDamnCCTogglesFix = YES;
                 }
             }
             
             if (!godDamnCCTogglesFix) {
-                frame.origin.y -= kGrabberHeight;
+                frame.origin.y -= kCCGrabberHeight;
             }
         }
         else {
-            frame.origin.y -= kGrabberHeight;
+            frame.origin.y -= kCCGrabberHeight;
         }
     }
     
@@ -265,7 +279,9 @@ NS_INLINE UIScrollView *scroller(void) {
 %hook SBControlCenterSeparatorView
 
 - (void)setFrame:(CGRect)frame {
-    frame.origin.y -= kGrabberHeight;
+    if (frame.size.width > frame.size.height) {
+        frame.origin.y -= kCCGrabberHeight;
+    }
     %orig;
 }
 
@@ -282,11 +298,11 @@ NS_INLINE UIScrollView *scroller(void) {
     
     CGRect frame = self.bounds;
     
-    frame.origin.y = kGrabberHeight;
-    frame.size.height = fakeHeight-kGrabberHeight;
+    frame.origin.y = kCCGrabberHeight;
+    frame.size.height = fakeHeight-kCCGrabberHeight;
     scroller().frame = frame;
     
-    frame.size.height = realHeight-kGrabberHeight;
+    frame.size.height = realHeight-kCCGrabberHeight;
     scroller().contentSize = frame.size;
 }
 
@@ -379,7 +395,7 @@ NS_INLINE UIScrollView *scroller(void) {
     CGFloat height = %orig;
     
     if (landscape) {
-        realHeight = kGrabberHeight;
+        realHeight = kCCGrabberHeight;
         
         for (NSUInteger i = 1; i < landscapeSectionViewControllers.count-1; i++) {
             SBControlCenterSectionViewController *controller = landscapeSectionViewControllers[i];
@@ -438,10 +454,58 @@ NS_INLINE UIScrollView *scroller(void) {
 
 %end
 
+#pragma mark - Constructor
+
 %ctor {
 	@autoreleasepool {
         CCBundleLoader *loader = [CCBundleLoader sharedInstance];
         [loader loadBundles];
+        
+        NSMutableDictionary *prefs = [NSMutableDictionary dictionaryWithContentsOfFile:kCCLoaderSettingsPath];
+        
+        if (!prefs) {
+            prefs = [NSMutableDictionary dictionary];
+        }
+        
+        NSMutableArray *enabledSections = [prefs[@"EnabledSections"] mutableCopy];
+        
+        if (!enabledSections) {
+            enabledSections = kCCLoaderStockOrderedSections.mutableCopy;
+        }
+        
+        NSMutableArray *disabledSections = [prefs[@"DisabledSections"] mutableCopy];
+        
+        NSMutableOrderedSet *allIDs = [NSMutableOrderedSet orderedSetWithSet:loader.bundleIDs];
+        if (!allIDs) {
+            allIDs = [NSMutableOrderedSet orderedSet];
+        }
+        
+        [allIDs addObjectsFromArray:kCCLoaderStockOrderedSections];
+        
+        //Remove deleted bundles
+        for (NSString *ID in enabledSections.copy) {
+            if (![allIDs containsObject:ID]) {
+                [enabledSections removeObject:ID];
+            }
+        }
+        
+        for (NSString *ID in disabledSections.copy) {
+            if (![allIDs containsObject:ID]) {
+                [disabledSections removeObject:ID];
+            }
+        }
+        
+        //Add new bundles
+        [allIDs minusSet:[NSSet setWithArray:enabledSections]];
+        [allIDs minusSet:[NSSet setWithArray:disabledSections]];
+        
+        [enabledSections addObjectsFromArray:allIDs.array];
+        
+        prefs[@"EnabledSections"] = enabledSections.copy;
+        prefs[@"DisabledSections"] = disabledSections.copy;
+        
+        [prefs writeToFile:kCCLoaderSettingsPath atomically:YES];
+        
         
 		%init(main);
         

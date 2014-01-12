@@ -23,6 +23,13 @@
 - (void)unloadBundles;
 
 @property (nonatomic, strong, readonly) NSSet *bundles;
+
+/*
+ @return All the bundle IDs of the bundles stored in \c bundles.
+ @warning Does not contain any bundle IDs of \c replacingBundles.
+ */
+@property (nonatomic, strong, readonly) NSSet *bundleIDs;
+
 @property (nonatomic, strong, readonly) NSDictionary *replacingBundles;
 
 
