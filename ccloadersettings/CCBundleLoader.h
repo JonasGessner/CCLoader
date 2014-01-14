@@ -15,6 +15,13 @@
 
 #define kCCLoaderStockSections [NSSet setWithArray:kCCLoaderStockOrderedSections]
 
+
+#if __has_feature(objc_arc)
+#define CC_STRONG strong
+#else
+#define CC_STRONG retain
+#endif
+
 @interface CCBundleLoader : NSObject
 
 + (instancetype)sharedInstance;
@@ -22,15 +29,15 @@
 - (void)loadBundles;
 - (void)unloadBundles;
 
-@property (nonatomic, strong, readonly) NSSet *bundles;
+@property (nonatomic, CC_STRONG, readonly) NSSet *bundles;
 
 /*
  @return All the bundle IDs of the bundles stored in \c bundles.
  @warning Does not contain any bundle IDs of \c replacingBundles.
  */
-@property (nonatomic, strong, readonly) NSSet *bundleIDs;
+@property (nonatomic, CC_STRONG, readonly) NSSet *bundleIDs;
 
-@property (nonatomic, strong, readonly) NSDictionary *replacingBundles;
+@property (nonatomic, CC_STRONG, readonly) NSDictionary *replacingBundles;
 
 
 @end

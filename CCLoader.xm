@@ -41,8 +41,6 @@ static NSMutableArray *landscapeStrippedSectionViewControllers = nil;
 
 static BOOL hideSeparators = NO;
 static BOOL hideMediaControlsInCurrentSession = NO;
-static BOOL godDamnCCTogglesFix = NO;
-
 
 static BOOL landscape = NO;
 
@@ -180,7 +178,6 @@ NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBC
     hideSeparators = [prefs[@"HideSeparators"] boolValue];
     
     
-    
     NSUInteger mediaControlsIndex = NSNotFound;
     NSUInteger landscapeMediaControlsIndex = NSNotFound;
     
@@ -190,7 +187,10 @@ NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBC
     }
     
     [sectionViewControllers release];
+    sectionViewControllers = nil;
+    
     [landscapeStrippedSectionViewControllers release];
+    landscapeStrippedSectionViewControllers = nil;
     
     sectionViewControllers = sectionViewControllersForIDs(sectionsToLoad, viewController, contentView, &mediaControlsIndex);
     
@@ -274,20 +274,7 @@ NS_INLINE void reloadCCSections(void) {
         frame.size.height = fakeHeight;
     }
     else {
-        if ([self isKindOfClass:%c(SBCCButtonLayoutView)]) {
-            if (!godDamnCCTogglesFix) {
-                if (!CGRectIsEmpty(frame) && frame.origin.y-kCCGrabberHeight < 0.0f) {
-                    godDamnCCTogglesFix = YES;
-                }
-            }
-            
-            if (!godDamnCCTogglesFix) {
-                frame.origin.y -= kCCGrabberHeight;
-            }
-        }
-        else {
-            frame.origin.y -= kCCGrabberHeight;
-        }
+        frame.origin.y -= kCCGrabberHeight;
     }
     
     %orig;
@@ -466,8 +453,6 @@ NS_INLINE void reloadCCSections(void) {
     }
     
     [scroller() removeFromSuperview];
-    [scroller() release];
-    _scroller = nil;
     
     realHeight = 0.0f;
     fakeHeight = 0.0f;

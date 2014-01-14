@@ -10,7 +10,6 @@
 
 #import "CCSection-Protocol.h"
 
-
 #define kCCSectionBundlePath @"/Library/CCLoader/Bundles"
 
 @implementation CCBundleLoader
@@ -75,5 +74,12 @@
     _replacingBundles = nil;
 }
 
+- (void)dealloc {
+#if !__has_feature(objc_arc)
+    [super dealloc];
+#endif
+    
+    [self unloadBundles];
+}
 
 @end

@@ -47,6 +47,23 @@
     return self;
 }
 
+- (void)dealloc {
+    %orig;
+    
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCWillAppearNotification" object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCDidDisappearNotification" object:nil];
+    
+    [self.section release];
+    [self setSection:nil];
+    
+    [self.view release];
+    self.view = nil;
+    
+    [self setBundle:nil];
+    
+    [self setReplacingSectionViewController:nil];
+}
+
 %new
 - (void)updateStatusText:(NSString *)text {
     [self.delegate section:self updateStatusText:text reason:@"de.j-gessner.ccloader.updatestatustext"];
@@ -98,8 +115,6 @@
     CCSectionView *view = [[%c(CCSectionView) alloc] initWithContentView:contentView];
 
     self.view = view;
-    
-    [view release];
 }
 
 %new

@@ -29,9 +29,15 @@
     return self;
 }
 
+- (void)dealloc {
+    %orig;
+    
+    [self setContentView:nil];
+}
+
 %new
 - (void)setContentView:(UIView *)view {
-    objc_setAssociatedObject(self, @selector(contentView), view, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    objc_setAssociatedObject(self, @selector(contentView), view, OBJC_ASSOCIATION_ASSIGN);
 }
 
 %new
