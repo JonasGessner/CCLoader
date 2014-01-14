@@ -44,6 +44,8 @@ static BOOL hideMediaControlsInCurrentSession = NO;
 
 static BOOL landscape = NO;
 
+static BOOL loadedSections = NO;
+
 static CGFloat realHeight = 0.0f;
 static CGFloat fakeHeight = 0.0f;
 
@@ -78,6 +80,24 @@ NS_INLINE SBControlCenterSectionViewController *stockSectionViewControllerForID(
     }
     else {
         return nil;
+    }
+}
+
+NS_INLINE void setStockSectionViewControllerForID(SBControlCenterContentView *contentView, NSString *sectionID, id value) {
+    if ([sectionID isEqualToString:@"com.apple.controlcenter.settings"]) {
+        contentView.settingsSection = value;
+    }
+    else if ([sectionID isEqualToString:@"com.apple.controlcenter.brightness"]) {
+        contentView.brightnessSection = value;
+    }
+    else if ([sectionID isEqualToString:@"com.apple.controlcenter.media-controls"]) {
+        contentView.mediaControlsSection = value;
+    }
+    else if ([sectionID isEqualToString:@"com.apple.controlcenter.air-stuff"]) {
+        contentView.airplaySection = value;
+    }
+    else if ([sectionID isEqualToString:@"com.apple.controlcenter.quick-launch"]) {
+        contentView.quickLaunchSection = value;
     }
 }
 
@@ -381,10 +401,22 @@ NS_INLINE void reloadCCSections(void) {
 + (id)_sharedInstanceCreatingIfNeeded:(BOOL)needed {
     SBControlCenterController *controller = %orig;
     
-    if (controller && !sectionViewControllers) {
+    if (controller && !loadedSections) {
+        loadedSections = YES;
+        
         SBControlCenterViewController *viewController = MSHookIvar<SBControlCenterViewController *>(controller, "_viewController");
         
         SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(viewController, "_contentView");
+        
+        CCBundleLoader *loader = [CCBundleLoader sharedInstance];
+        
+        NSDictionary *replacingBundles = loader.replacingBundles;
+        
+        for (NSString *key in replacingBundles) {
+            [stockSectionViewControllerForID(contentView, key) release];
+            
+            setStockSectionViewControllerForID(contentView, key, nil);
+        }
         
         loadCCSections(viewController, contentView);
     }
