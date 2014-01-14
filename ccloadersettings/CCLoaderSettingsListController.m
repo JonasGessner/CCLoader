@@ -11,6 +11,10 @@
 #import "CCBundleLoader.h"
 
 
+#define rgba(r, g, b, a) [UIColor colorWithRed:r/255.0f green:g/255.0f blue:b/255.0f alpha:a]
+#define rgb(r, g, b) rgba(r, g, b, 1.0f)
+
+
 @interface CCLoaderSettingsListController () <UITableViewDataSource, UITableViewDelegate, UIActionSheetDelegate> {
     NSMutableOrderedSet *_enabled;
     NSMutableOrderedSet *_disabled;
@@ -81,6 +85,20 @@
     UIActionSheet *sheet = [[UIActionSheet alloc] initWithTitle:@"CCLoader by Jonas Gessner" delegate:self cancelButtonTitle:@"Cancel" destructiveButtonTitle:nil otherButtonTitles:@"Donate", @"Twitter", @"More Apps & Tweaks", @"Source Code", nil];
     
     [sheet showFromBarButtonItem:self.navigationItem.rightBarButtonItem animated:YES];
+}
+
+- (void)willPresentActionSheet:(UIActionSheet *)sheet {
+    for (UIButton *button in sheet.subviews) {
+        if ([button isKindOfClass:[UIButton class]]) {
+            UIColor *color = rgb(35.0f, 180.0f, 90.0f);
+            
+            [button setTitleColor:color forState:UIControlStateNormal];
+            [button setTitleColor:color forState:UIControlStateSelected];
+            [button setTitleColor:color forState:UIControlStateHighlighted];
+            
+            break;
+        }
+    }
 }
 
 - (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex {

@@ -15,7 +15,6 @@
 
 #define kCCLoaderStockSections [NSSet setWithArray:kCCLoaderStockOrderedSections]
 
-
 #if __has_feature(objc_arc)
 #define CC_STRONG strong
 #else
@@ -29,7 +28,11 @@
 - (void)loadBundles:(BOOL)alsoLoadReplacementBundles;
 - (void)unloadBundles;
 
+
 @property (nonatomic, CC_STRONG, readonly) NSSet *bundles;
+
+@property (nonatomic, CC_STRONG, readonly) NSDictionary *replacingBundles;
+
 
 /*
  @return All the bundle IDs of the bundles stored in \c bundles.
@@ -37,7 +40,6 @@
  */
 @property (nonatomic, CC_STRONG, readonly) NSSet *bundleIDs;
 
-@property (nonatomic, CC_STRONG, readonly) NSDictionary *replacingBundles;
 
 
 @end
