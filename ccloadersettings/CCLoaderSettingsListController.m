@@ -14,6 +14,7 @@
 #define rgba(r, g, b, a) [UIColor colorWithRed:r/255.0f green:g/255.0f blue:b/255.0f alpha:a]
 #define rgb(r, g, b) rgba(r, g, b, 1.0f)
 
+#define iPad (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
 
 @interface CCLoaderSettingsListController () <UITableViewDataSource, UITableViewDelegate, UIActionSheetDelegate> {
     NSMutableOrderedSet *_enabled;
@@ -190,10 +191,14 @@
 #pragma mark - UITableViewDataSource
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return 3;
+    return (iPad ? 1 : 3);
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    if (iPad) {
+        return 0;
+    }
+    
     if (section == 2) {
         return 2;
     }
@@ -215,6 +220,9 @@
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+    if (iPad) {
+        return nil;
+    }
     if (section == 0) {
         return @"Enabled Sections";
     }
@@ -230,8 +238,11 @@
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
+    if (iPad) {
+        return [NSString stringWithFormat:@"There's nothing to see here. CCLoader doesn't have any configurable options on iPads. It can however be used as a developer utility for replacing stock Control Center sections with custom ones.\n\n© Jonas Gessner %@", (2014 < kYear ? [NSString stringWithFormat:@"2014-%lu", (unsigned long)kYear] : @"2014")];
+    }
     if (section == 2) {
-        return [NSString stringWithFormat:@"If no media is playing the media controls will not be shown in ControlCenter\n\n\n© Jonas Gessner %@", (2014 < kYear ? [NSString stringWithFormat:@"2014-%lu", (unsigned long)kYear] : @"2014")];
+        return [NSString stringWithFormat:@"Dynamic Media Controls: If no media is playing the media controls will not be shown in ControlCenter\n\n\n© Jonas Gessner %@", (2014 < kYear ? [NSString stringWithFormat:@"2014-%lu", (unsigned long)kYear] : @"2014")];
     }
     else {
         return nil;

@@ -184,7 +184,7 @@ NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBC
     
     NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:kCCLoaderSettingsPath];
     
-    NSArray *sectionsToLoad = prefs[@"EnabledSections"];
+    NSArray *sectionsToLoad = (iPad ? kCCLoaderStockOrderedSections : prefs[@"EnabledSections"]);
     
     if (!sectionsToLoad) {
         sectionsToLoad = kCCLoaderStockOrderedSections;
