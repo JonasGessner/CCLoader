@@ -44,7 +44,9 @@
         UIButton *addButton = [UIButton buttonWithType:UIButtonTypeInfoLight];
         [addButton addTarget:self action:@selector(infoPressed:) forControlEvents:UIControlEventTouchUpInside];
         
-        self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:addButton];
+        UIBarButtonItem *barButtton = [[UIBarButtonItem alloc] initWithCustomView:addButton];
+        
+        self.navigationItem.rightBarButtonItem = barButtton;
         
         CCBundleLoader *loader = [CCBundleLoader sharedInstance];
         [loader loadBundles];

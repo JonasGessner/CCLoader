@@ -7,7 +7,7 @@ THEOS_BUILD_DIR = Packages
 include theos/makefiles/common.mk
 
 TWEAK_NAME = CCLoader
-CCLoader_CFLAGS = -fobjc-arc
+CCLoader_CFLAGS = -fno-objc-arc
 CCLoader_FILES = CCLoader.xm CCSectionViewController.x CCSectionView.x ccloadersettings/CCBundleLoader.m CCScrollView.m
 CCLoader_FRAMEWORKS = Foundation UIKit CoreGraphics CoreFoundation
 

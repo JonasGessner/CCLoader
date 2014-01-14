@@ -31,8 +31,15 @@
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(controlCenterDidDisappear) name:@"CCDidDisappearNotification" object:nil];
         
         [self setBundle:bundle];
-        [self setSection:[[[self.bundle principalClass] alloc] init]];
+
+        Class principalClass = [self.bundle principalClass];
         
+        id <CCSection> section = [[principalClass alloc] init];
+
+        [self setSection:section];
+        
+        [section release];
+
         if ([self.section respondsToSelector:@selector(setDelegate:)]) {
             [self.section setDelegate:self];
         }
@@ -88,7 +95,11 @@
 - (void)loadView {
     UIView *contentView = [self.section view];
     
-    self.view = [[%c(CCSectionView) alloc] initWithContentView:contentView];
+    CCSectionView *view = [[%c(CCSectionView) alloc] initWithContentView:contentView];
+
+    self.view = view;
+    
+    [view release];
 }
 
 %new

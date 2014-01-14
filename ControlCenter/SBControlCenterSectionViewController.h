@@ -13,7 +13,7 @@
 
 + (Class)viewClass;
 
-@property (nonatomic) id <SBControlCenterSectionViewControllerDelegate> delegate;
+@property (nonatomic, assign) id <SBControlCenterSectionViewControllerDelegate> delegate;
 
 - (void)controlCenterDidFinishTransition;
 - (void)controlCenterWillBeginTransition;

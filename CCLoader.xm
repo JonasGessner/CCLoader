@@ -86,7 +86,7 @@ NS_INLINE SBControlCenterSectionViewController *stockSectionViewControllerForID(
 NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCenterViewController *viewController, SBControlCenterContentView *contentView, NSUInteger *mediaControlsIndex) {
     CCBundleLoader *loader = [CCBundleLoader sharedInstance];
     
-    NSMutableArray *_sectionViewControllers = [NSMutableArray arrayWithCapacity:IDs.count];
+    NSMutableArray *_sectionViewControllers = [[NSMutableArray alloc] initWithCapacity:IDs.count];
     
     NSSet *stockLayout = kCCLoaderStockSections;
     
@@ -95,7 +95,7 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCe
     NSDictionary *replacingBundles = loader.replacingBundles;
     
     if (!customSectionViewControllers) {
-        customSectionViewControllers = [NSMutableDictionary dictionary];
+        customSectionViewControllers = [[NSMutableDictionary alloc] init];
     }
     
     NSMutableSet *usedCustomSections = [NSMutableSet setWithArray:customSectionViewControllers.allKeys];
@@ -113,6 +113,8 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCe
         [usedCustomSections removeObject:sectionIdentifier];
         
         [_sectionViewControllers addObject:sectionViewController];
+        
+        [sectionViewController release];
         
         [bundles removeObject:loadingBundle];
         
@@ -158,8 +160,6 @@ NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBC
     NSCParameterAssert(contentView);
     NSCParameterAssert(viewController);
     
-    strippedSectionViewControllers = nil;
-    
     NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:kCCLoaderSettingsPath];
     
     NSArray *sectionsToLoad = prefs[@"EnabledSections"];
@@ -189,9 +189,19 @@ NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBC
         [contentView _removeSectionController:sectionViewController];
     }
     
+    [sectionViewControllers release];
+    [landscapeStrippedSectionViewControllers release];
+    
     sectionViewControllers = sectionViewControllersForIDs(sectionsToLoad, viewController, contentView, &mediaControlsIndex);
     
     landscapeSectionViewControllers = sectionViewControllersForIDs(landscapeSectionsToLoad.array, viewController, contentView, &landscapeMediaControlsIndex);
+    
+    
+    [landscapeStrippedSectionViewControllers release];
+    landscapeStrippedSectionViewControllers = nil;
+    
+    [strippedSectionViewControllers release];
+    strippedSectionViewControllers = nil;
     
     if (hideMediaControlsIfStopped) {
         if (mediaControlsIndex != NSNotFound) {
@@ -211,8 +221,12 @@ NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBC
     
     if (expectedCount > 1 && !hideSeparators) {
         while (separators.count > expectedCount-1) {
-            [[separators lastObject] removeFromSuperview];
+            SBControlCenterSeparatorView *separator = [separators lastObject];
+            
+            [separator removeFromSuperview];
             [separators removeLastObject];
+            
+            [separator release];
         }
         
         while (separators.count < expectedCount-1) {
@@ -224,8 +238,10 @@ NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBC
         }
     }
     else {
-        for (UIView *v in separators) {
-            [v removeFromSuperview];
+        for (SBControlCenterSeparatorView *separator in separators) {
+            [separator removeFromSuperview];
+            
+            [separator release];
         }
         
         [separators removeAllObjects];
@@ -450,6 +466,8 @@ NS_INLINE void reloadCCSections(void) {
     }
     
     [scroller() removeFromSuperview];
+    [scroller() release];
+    _scroller = nil;
     
     realHeight = 0.0f;
     fakeHeight = 0.0f;

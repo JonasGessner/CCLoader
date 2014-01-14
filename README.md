@@ -25,7 +25,10 @@ If a stock section is replaced, the section replacing the original section will 
 
 License
 ======
-MIT License.
+
+Licensed under Creative Commons Attribution NonCommercial NoDerivs.
+
+See the <a href="http://creativecommons.org/licenses/by-nc-nd/2.0/legalcode">full license</a>.
 
 Credits
 =======

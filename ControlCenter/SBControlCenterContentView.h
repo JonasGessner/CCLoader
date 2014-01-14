@@ -27,7 +27,7 @@
 @property(retain, nonatomic) SBControlCenterSectionViewController *brightnessSection; // @synthesize brightnessSection=_brightnessSection;
 @property(retain, nonatomic) SBCCSettingsSectionController *settingsSection; // @synthesize settingsSection=_settingsSection;
 @property(retain, nonatomic) SBControlCenterGrabberView *grabberView; // @synthesize grabberView=_grabberView;
-@property(nonatomic) UIViewController *viewController; // @synthesize viewController=_viewController;
+@property(nonatomic, assign) UIViewController *viewController; // @synthesize viewController=_viewController;
 - (void)controlCenterDidFinishTransition;
 - (void)controlCenterWillBeginTransition;
 - (void)controlCenterDidDismiss;
