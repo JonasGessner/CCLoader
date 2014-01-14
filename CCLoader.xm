@@ -118,7 +118,6 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCe
     
     NSMutableSet *usedCustomSections = [NSMutableSet setWithArray:customSectionViewControllers.allKeys];
     
-    
     CCSectionViewController *(^loadCustomSection)(NSString *sectionIdentifier, NSBundle *loadingBundle) = ^(NSString *sectionIdentifier, NSBundle *loadingBundle) {
         CCSectionViewController *sectionViewController = customSectionViewControllers[sectionIdentifier];
         
@@ -169,6 +168,11 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCe
     
     for (NSString *unusedSection in usedCustomSections) {
         [customSectionViewControllers removeObjectForKey:unusedSection];
+    }
+    
+    if (!customSectionViewControllers.count) {
+        [customSectionViewControllers release];
+        customSectionViewControllers = nil;
     }
     
     return _sectionViewControllers;
@@ -424,6 +428,42 @@ NS_INLINE void reloadCCSections(void) {
     return controller;
 }
 
+
+- (void)dealloc {
+    %orig;
+    
+    [scroller() removeFromSuperview];
+    [scroller() release];
+    _scroller = nil;
+    
+    realHeight = 0.0f;
+    fakeHeight = 0.0f;
+    
+    landscape = NO;
+    
+    hideSeparators = NO;
+    hideMediaControlsInCurrentSession = NO;
+    
+    
+    [customSectionViewControllers release];
+    customSectionViewControllers = nil;
+    
+    [sectionViewControllers release];
+    sectionViewControllers = nil;
+    
+    [strippedSectionViewControllers release];
+    strippedSectionViewControllers = nil;
+    
+    [landscapeSectionViewControllers release];
+    landscapeSectionViewControllers = nil;
+    
+    [landscapeStrippedSectionViewControllers release];
+    landscapeStrippedSectionViewControllers = nil;
+    
+    
+    loadedSections = NO;
+}
+
 %end
 
 
@@ -503,7 +543,7 @@ NS_INLINE void reloadCCSections(void) {
 %ctor {
 	@autoreleasepool {
         CCBundleLoader *loader = [CCBundleLoader sharedInstance];
-        [loader loadBundles];
+        [loader loadBundles:YES];
         
         NSMutableDictionary *prefs = [NSMutableDictionary dictionaryWithContentsOfFile:kCCLoaderSettingsPath];
         

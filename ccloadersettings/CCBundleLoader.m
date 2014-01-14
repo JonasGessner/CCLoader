@@ -25,16 +25,16 @@
     return instance;
 }
 
-- (void)loadBundles {
+- (void)loadBundles:(BOOL)alsoLoadReplacementBundles {
     NSMutableSet *bundles = [NSMutableSet set];
     
     NSMutableSet *bundleIDs = [NSMutableSet set];
     
-    NSMutableDictionary *replacingBundles = [NSMutableDictionary dictionary];
+    NSMutableDictionary *replacingBundles = (alsoLoadReplacementBundles ? [NSMutableDictionary dictionary] : nil);
     
     NSArray *contents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:kCCSectionBundlePath error:nil];
     
-    NSSet *stockSections = kCCLoaderStockSections;
+    NSSet *stockSections = (alsoLoadReplacementBundles ? kCCLoaderStockSections : nil);
     
     for (NSString *file in contents) {
         if ([file.pathExtension isEqualToString:@"bundle"]) {
@@ -47,7 +47,7 @@
             if ([principalClass conformsToProtocol:@protocol(CCSection)]) {
                 NSString *replaceID = [bundle objectForInfoDictionaryKey:kCCLoaderReplaceStockSectionInfoDicationaryKey];
                 
-                if ([stockSections containsObject:replaceID]) {
+                if (alsoLoadReplacementBundles && [stockSections containsObject:replaceID]) {
                     replacingBundles[replaceID] = bundle;
                 }
                 else {
@@ -58,7 +58,7 @@
         }
     }
     
-    if (replacingBundles.count) {
+    if (alsoLoadReplacementBundles && replacingBundles.count) {
         _replacingBundles = replacingBundles.copy;
     }
     

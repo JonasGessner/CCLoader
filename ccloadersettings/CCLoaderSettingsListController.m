@@ -49,7 +49,7 @@
         self.navigationItem.rightBarButtonItem = barButtton;
         
         CCBundleLoader *loader = [CCBundleLoader sharedInstance];
-        [loader loadBundles];
+        [loader loadBundles:NO];
         
         NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:kCCLoaderSettingsPath];
         
@@ -78,7 +78,7 @@
 }
 
 - (void)infoPressed:(UIButton *)__unused sender {
-    UIActionSheet *sheet = [[UIActionSheet alloc] initWithTitle:@"CCLoader by Jonas Gessner" delegate:self cancelButtonTitle:@"Cancel" destructiveButtonTitle:@"Donate" otherButtonTitles:@"Twitter", @"More Apps & Tweaks", @"Source Code", nil];
+    UIActionSheet *sheet = [[UIActionSheet alloc] initWithTitle:@"CCLoader by Jonas Gessner" delegate:self cancelButtonTitle:@"Cancel" destructiveButtonTitle:nil otherButtonTitles:@"Donate", @"Twitter", @"More Apps & Tweaks", @"Source Code", nil];
     
     [sheet showFromBarButtonItem:self.navigationItem.rightBarButtonItem animated:YES];
 }
