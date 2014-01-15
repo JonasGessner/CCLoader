@@ -39,7 +39,7 @@ static NSMutableArray *strippedSectionViewControllers = nil;
 static NSMutableArray *landscapeSectionViewControllers = nil;
 static NSMutableArray *landscapeStrippedSectionViewControllers = nil;
 
-static BOOL hideSeparators = NO;
+
 static BOOL hideMediaControlsInCurrentSession = NO;
 
 static BOOL landscape = NO;
@@ -125,13 +125,13 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCe
             sectionViewController = [[%c(CCSectionViewController) alloc] initWithBundle:loadingBundle];
             [sectionViewController setDelegate:viewController];
             customSectionViewControllers[sectionIdentifier] = sectionViewController;
+            
+            [sectionViewController release];
         }
         
         [usedCustomSections removeObject:sectionIdentifier];
         
         [_sectionViewControllers addObject:sectionViewController];
-        
-        [sectionViewController release];
         
         [bundles removeObject:loadingBundle];
         
@@ -146,7 +146,9 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCe
                 }
             }
             
-            NSBundle *replacingBundle = replacingBundles[sectionID];
+            NSArray *replacingBundlesArray = replacingBundles[sectionID];
+            
+            NSBundle *replacingBundle = [replacingBundlesArray firstObject];
             
             if (replacingBundle) {
                 CCSectionViewController *section = loadCustomSection(sectionID, replacingBundle);
@@ -199,7 +201,7 @@ NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBC
     [landscapeSectionsToLoad insertObject:@"com.apple.controlcenter.quick-launch" atIndex:landscapeSectionsToLoad.count];
     
     BOOL hideMediaControlsIfStopped = [prefs[@"HideMediaControls"] boolValue];
-    hideSeparators = [prefs[@"HideSeparators"] boolValue];
+    BOOL hideSeparators = [prefs[@"HideSeparators"] boolValue];
     
     
     NSUInteger mediaControlsIndex = NSNotFound;
@@ -249,8 +251,6 @@ NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBC
             
             [separator removeFromSuperview];
             [separators removeLastObject];
-            
-            [separator release];
         }
         
         while (separators.count < expectedCount-1) {
@@ -264,8 +264,6 @@ NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBC
     else {
         for (SBControlCenterSeparatorView *separator in separators) {
             [separator removeFromSuperview];
-            
-            [separator release];
         }
         
         [separators removeAllObjects];
@@ -297,7 +295,7 @@ NS_INLINE void reloadCCSections(void) {
     if (landscape && [self isKindOfClass:%c(SBCCButtonLayoutView)]) {
         frame.size.height = fakeHeight;
     }
-    else {
+    else if (self.superview == _scroller) {
         frame.origin.y -= kCCGrabberHeight;
     }
     
@@ -309,9 +307,10 @@ NS_INLINE void reloadCCSections(void) {
 %hook SBControlCenterSeparatorView
 
 - (void)setFrame:(CGRect)frame {
-    if (frame.size.width > frame.size.height) {
+    if (self.superview == _scroller) {
         frame.origin.y -= kCCGrabberHeight;
     }
+    
     %orig;
 }
 
@@ -338,6 +337,7 @@ NS_INLINE void reloadCCSections(void) {
 
 - (void)_removeSectionController:(SBControlCenterSectionViewController *)controller {
     %orig;
+    
     [controller.view removeFromSuperview];
 }
 
@@ -412,15 +412,15 @@ NS_INLINE void reloadCCSections(void) {
         
         SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(viewController, "_contentView");
         
-        CCBundleLoader *loader = [CCBundleLoader sharedInstance];
-        
-        NSDictionary *replacingBundles = loader.replacingBundles;
-        
-        for (NSString *key in replacingBundles) {
-            [stockSectionViewControllerForID(contentView, key) release];
-            
-            setStockSectionViewControllerForID(contentView, key, nil);
-        }
+//        CCBundleLoader *loader = [CCBundleLoader sharedInstance];
+//        
+//        NSDictionary *replacingBundles = loader.replacingBundles;
+//        
+//        for (NSString *key in replacingBundles) {
+//            [stockSectionViewControllerForID(contentView, key) release];
+//            
+//            setStockSectionViewControllerForID(contentView, key, nil);
+//        }
         
         loadCCSections(viewController, contentView);
     }
@@ -441,7 +441,6 @@ NS_INLINE void reloadCCSections(void) {
     
     landscape = NO;
     
-    hideSeparators = NO;
     hideMediaControlsInCurrentSession = NO;
     
     

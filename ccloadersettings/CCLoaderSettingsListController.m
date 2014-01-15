@@ -54,7 +54,7 @@
         self.navigationItem.rightBarButtonItem = barButtton;
         
         CCBundleLoader *loader = [CCBundleLoader sharedInstance];
-        [loader loadBundles:NO];
+        [loader loadBundles:YES];
         
         NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:kCCLoaderSettingsPath];
         
@@ -281,6 +281,12 @@
         
         NSString *displayName = _displayNames[ID];
         
+//        CCBundleLoader *loader = [CCBundleLoader sharedInstance];
+//        
+//        NSDictionary *replacements = loader.replacingBundles;
+//        
+//        cell.accessoryType = ([replacements[ID] count] > 1 ? UITableViewCellAccessoryDisclosureIndicator : UITableViewCellAccessoryNone);
+        
         cell.textLabel.text = (displayName ? : ID);
         
         cell.textLabel.alpha = 1.0f;
@@ -313,7 +319,18 @@
 }
 
 - (BOOL)tableView:(UITableView *)tableView shouldHighlightRowAtIndexPath:(NSIndexPath *)indexPath {
-    return NO;
+//    if ((indexPath.section == 0 && _enabled.count) || (indexPath.section == 1 && _disabled.count)) {
+//        CCBundleLoader *loader = [CCBundleLoader sharedInstance];
+//        
+//        NSDictionary *replacements = loader.replacingBundles;
+//        
+//        NSString *ID = (indexPath.section == 0 ? _enabled[indexPath.row] : _disabled[indexPath.row]);
+//        
+//        return ([replacements[ID] count] > 1);
+//    }
+//    else {
+        return NO;
+//    }
 }
 
 - (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -321,6 +338,20 @@
 }
 
 #pragma mark - UITableViewDelegate
+
+//- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+//    if ((indexPath.section == 0 && _enabled.count) || (indexPath.section == 1 && _disabled.count)) {
+//        CCBundleLoader *loader = [CCBundleLoader sharedInstance];
+//        
+//        NSDictionary *replacements = loader.replacingBundles;
+//        
+//        NSString *ID = (indexPath.section == 0 ? _enabled[indexPath.row] : _disabled[indexPath.row]);
+//        
+//        if ([replacements[ID] count] > 1) {
+//            
+//        }
+//    }
+//}
 
 - (NSIndexPath *)tableView:(UITableView *)tableView targetIndexPathForMoveFromRowAtIndexPath:(NSIndexPath *)sourceIndexPath toProposedIndexPath:(NSIndexPath *)proposedDestinationIndexPath {
     if (proposedDestinationIndexPath.section > 1) {

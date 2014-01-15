@@ -48,7 +48,15 @@
                 NSString *replaceID = [bundle objectForInfoDictionaryKey:kCCLoaderReplaceStockSectionInfoDicationaryKey];
                 
                 if (alsoLoadReplacementBundles && [stockSections containsObject:replaceID]) {
-                    replacingBundles[replaceID] = bundle;
+                    NSMutableArray *replacements = replacingBundles[replaceID];
+                    
+                    if (!replacements) {
+                        replacements = [NSMutableArray array];
+                    }
+                    
+                    [replacements addObject:bundle];
+                    
+                    replacingBundles[replaceID] = replacements;
                 }
                 else {
                     [bundleIDs addObject:bundle.bundleIdentifier];
