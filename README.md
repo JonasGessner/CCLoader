@@ -18,6 +18,9 @@ Stock Control Center sections can also be replaced with a custom bundle. The NIC
 • com.apple.controlcenter.air-stuff<br>
 • com.apple.controlcenter.quick-launch<br>
 <br>
+CCLoader checks for `CCReplacingStockSectionID` in the bundle's Info.plist file. if any of the above values is given for that key then the corresponding stock section will be replaced. Otherwise the bundle will be recognized as a new section for Control Center.
+<br>
+<br>
 If a stock section is replaced, the section replacing the original section will automatically be the same size as the original section, therefore the section height specified in the replacing section will be ignored and is irrelevant.
 <br>
 <br>
