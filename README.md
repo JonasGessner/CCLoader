@@ -28,6 +28,12 @@ If a stock section is replaced, the section replacing the original section will 
 The only feature that works on iPads is to replace stock sections. New sections cannot be added to the iPad's Control Center (as of now).
 <br>
 <br>
+Contributing
+======
+Contributing to the project is much appreciated. Feel free to fork and modify the project and open pull requests.
+
+You can contact me on Twitter: <a href="http://twitter.com/JonasGessner">@JonasGessner</a>.
+
 License
 ======
 
