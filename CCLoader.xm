@@ -44,6 +44,9 @@ static BOOL hideMediaControlsInCurrentSession = NO;
 
 static BOOL landscape = NO;
 
+static BOOL contentHeightIsSet = NO;
+static CGFloat contentHeight = 0.0f;
+
 static BOOL loadedSections = NO;
 
 static CGFloat realHeight = 0.0f;
@@ -289,37 +292,39 @@ NS_INLINE void reloadCCSections(void) {
 
 %group main
 
-%hook SBControlCenterSectionView
-
-- (void)setFrame:(CGRect)frame {
-    if (landscape && [self isKindOfClass:%c(SBCCButtonLayoutView)]) {
-        frame.size.height = fakeHeight;
-    }
-    else if (self.superview == _scroller) {
-        frame.origin.y -= kCCGrabberHeight;
-    }
-    
-    %orig;
-}
-
-%end
-
-%hook SBControlCenterSeparatorView
-
-- (void)setFrame:(CGRect)frame {
-    if (self.superview == _scroller) {
-        frame.origin.y -= kCCGrabberHeight;
-    }
-    
-    %orig;
-}
-
-%end
-
 %hook SBControlCenterContentView
 
 - (void)layoutSubviews {
     %orig;
+    
+    NSUInteger index = 0;
+    
+    for (UIViewController *viewController in self._allSections.copy) {
+        UIView *view = viewController.view;
+        
+        CGRect frame = view.frame;
+        
+        if (landscape && [view isKindOfClass:%c(SBCCButtonLayoutView)]) {
+            frame.size.height = fakeHeight;
+        }
+        else {
+            frame.origin.y -= kCCGrabberHeight;
+        }
+        
+        view.frame = frame;
+        
+        UIView *separator = [self _separatorAtIndex:index];
+        
+        if (separator) {
+            CGRect separatorFrame = separator.frame;
+            
+            separatorFrame.origin.y -= kCCGrabberHeight;
+            
+            separator.frame = separatorFrame;
+        }
+        
+        index++;
+    }
     
     if (scroller().superview != self) {
         [self addSubview:scroller()];
@@ -341,14 +346,16 @@ NS_INLINE void reloadCCSections(void) {
     [controller.view removeFromSuperview];
 }
 
-//- (NSArray *)subviews {
-//    NSMutableArray *subviews = %orig.mutableCopy;
-//
-//    [subviews removeObjectIdenticalTo:scroller()];
-//    [subviews addObjectsFromArray:scroller().subviews];
-//
-//    return subviews.copy;
-//}
+/*
+- (NSArray *)subviews {
+    NSMutableArray *subviews = %orig.mutableCopy;
+
+    [subviews removeObjectIdenticalTo:scroller()];
+    [subviews addObjectsFromArray:scroller().subviews];
+
+    return subviews.copy;
+}
+*/
 
 - (void)addSubview:(UIView *)subview {
     if ([subview isKindOfClass:%c(SBControlCenterSectionView)]) {
@@ -469,34 +476,44 @@ NS_INLINE void reloadCCSections(void) {
 %hook SBControlCenterViewController
 
 - (CGFloat)contentHeightForOrientation:(UIInterfaceOrientation)orientation {
-    landscape = UIInterfaceOrientationIsLandscape(orientation);
-    
-    CGFloat height = %orig;
-    
-    if (landscape) {
-        realHeight = kCCGrabberHeight;
+    if (!contentHeightIsSet) {
+        landscape = UIInterfaceOrientationIsLandscape(orientation);
         
-        for (NSUInteger i = 1; i < landscapeSectionViewControllers.count-1; i++) {
-            SBControlCenterSectionViewController *controller = landscapeSectionViewControllers[i];
+        CGFloat height = %orig;
+        
+        if (landscape) {
+            realHeight = kCCGrabberHeight;
             
-            realHeight += [controller contentSizeForOrientation:orientation].height+(i == 1 ? 1.5f : 0.0f);
+            NSArray *search = (hideMediaControlsInCurrentSession ? landscapeStrippedSectionViewControllers : landscapeSectionViewControllers);
+            
+            for (NSUInteger i = 1; i < search.count-1; i++) {
+                SBControlCenterSectionViewController *controller = search[i];
+                
+                realHeight += [controller contentSizeForOrientation:orientation].height+(i == 1 ? 1.5f : 0.0f);
+            }
+            
+            fakeHeight = height;
+            
+            if (fakeHeight > realHeight) {
+                realHeight = fakeHeight;
+            }
+        }
+        else {
+            realHeight = height;
+            
+            CGFloat screenHeight = self.view.frame.size.height;
+            
+            if (height > screenHeight) {
+                height = screenHeight;
+            }
+            
+            fakeHeight = height;
         }
         
-        fakeHeight = height;
-    }
-    else {
-        realHeight = height;
-        
-        CGFloat screenHeight = self.view.frame.size.height;
-        
-        if (height > screenHeight) {
-            height = screenHeight;
-        }
-        
-        fakeHeight = height;
+        contentHeight = height;
     }
     
-    return height;
+    return contentHeight;
 }
 
 - (void)controlCenterWillPresent {
@@ -531,6 +548,8 @@ NS_INLINE void reloadCCSections(void) {
     landscape = NO;
     
     [[NSNotificationCenter defaultCenter] postNotificationName:@"CCDidDisappearNotification" object:nil];
+    
+    contentHeightIsSet = NO;
 }
 
 %end

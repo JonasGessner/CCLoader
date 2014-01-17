@@ -239,10 +239,10 @@
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
     if (iPad) {
-        return [NSString stringWithFormat:@"There's nothing to see here. CCLoader doesn't have any configurable options on iPads. It can however be used as a developer utility for replacing stock Control Center sections with custom ones.\n\n© Jonas Gessner %@", (2014 < kYear ? [NSString stringWithFormat:@"2014-%lu", (unsigned long)kYear] : @"2014")];
+        return [NSString stringWithFormat:@"There's nothing to see here. CCLoader doesn't have any configurable options on iPads. It can however be used as a developer utility for replacing stock Control Center sections with custom ones.\n\n© %@ Jonas Gessner", (2014 < kYear ? [NSString stringWithFormat:@"2014-%lu", (unsigned long)kYear] : @"2014")];
     }
     if (section == 2) {
-        return [NSString stringWithFormat:@"Dynamic Media Controls: If no media is playing the media controls will not be shown in ControlCenter\n\n\n© Jonas Gessner %@", (2014 < kYear ? [NSString stringWithFormat:@"2014-%lu", (unsigned long)kYear] : @"2014")];
+        return [NSString stringWithFormat:@"Dynamic Media Controls: If no media is playing the media controls will not be shown in Control Center.\n\n\n© %@ Jonas Gessner", (2014 < kYear ? [NSString stringWithFormat:@"2014-%lu", (unsigned long)kYear] : @"2014")];
     }
     else {
         return nil;
