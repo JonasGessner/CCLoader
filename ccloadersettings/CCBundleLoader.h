@@ -15,7 +15,9 @@
 
 #define kCCLoaderStockSections [NSSet setWithArray:kCCLoaderStockOrderedSections]
 
-#if __has_feature(objc_arc)
+#define ARC __has_feature(objc_arc)
+
+#if ARC
 #define CC_STRONG strong
 #else
 #define CC_STRONG retain
@@ -27,6 +29,13 @@
 
 - (void)loadBundles:(BOOL)alsoLoadReplacementBundles;
 - (void)unloadBundles;
+
+@property (nonatomic, CC_STRONG, readonly) NSSet *oldNCBundles;
+
+@property (nonatomic, CC_STRONG, readonly) NSSet *NCBundles;
+
+@property (nonatomic, CC_STRONG, readonly) NSSet *NCBundleIDs;
+
 
 
 @property (nonatomic, CC_STRONG, readonly) NSSet *bundles;

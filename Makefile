@@ -8,8 +8,9 @@ include theos/makefiles/common.mk
 
 TWEAK_NAME = CCLoader
 CCLoader_CFLAGS = -fno-objc-arc
-CCLoader_FILES = CCLoader.xm CCSectionViewController.x CCSectionView.x ccloadersettings/CCBundleLoader.m CCScrollView.m
+CCLoader_FILES = CCLoader.xm CCSectionViewController.x CCSectionView.x CCLoaderSettings/CCBundleLoader.m CCScrollView.m
 CCLoader_FRAMEWORKS = Foundation UIKit CoreGraphics CoreFoundation
+CCLoader_PRIVATE_FRAMEWORKS = SpringBoardUIServices
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 SUBPROJECTS += CCLoaderSettings

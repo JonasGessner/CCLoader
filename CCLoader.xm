@@ -52,6 +52,8 @@ static BOOL loadedSections = NO;
 static CGFloat realHeight = 0.0f;
 static CGFloat fakeHeight = 0.0f;
 
+static BOOL visible = NO;
+
 static CCScrollView *_scroller = nil;
 
 NS_INLINE UIScrollView *scroller(void) {
@@ -104,7 +106,7 @@ NS_INLINE void setStockSectionViewControllerForID(SBControlCenterContentView *co
     }
 }
 
-NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCenterViewController *viewController, SBControlCenterContentView *contentView, NSUInteger *mediaControlsIndex) {
+NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCenterViewController *viewController, SBControlCenterContentView *contentView, NSUInteger *mediaControlsIndex, BOOL cleanUnusedSections) {
     CCBundleLoader *loader = [CCBundleLoader sharedInstance];
     
     NSMutableArray *_sectionViewControllers = [[NSMutableArray alloc] initWithCapacity:IDs.count];
@@ -113,26 +115,32 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCe
     
     NSMutableSet *bundles = loader.bundles.mutableCopy;
     
+    NSMutableSet *NCBundles = loader.NCBundles.mutableCopy;
+    
+    NSMutableSet *oldNCBundles = loader.oldNCBundles.mutableCopy;
+    
     NSDictionary *replacingBundles = loader.replacingBundles;
     
     if (!customSectionViewControllers) {
         customSectionViewControllers = [[NSMutableDictionary alloc] init];
     }
     
-    NSMutableSet *usedCustomSections = [NSMutableSet setWithArray:customSectionViewControllers.allKeys];
+    NSMutableSet *usedCustomSections = (cleanUnusedSections ? [NSMutableSet setWithArray:customSectionViewControllers.allKeys] : nil);
     
-    CCSectionViewController *(^loadCustomSection)(NSString *sectionIdentifier, NSBundle *loadingBundle) = ^(NSString *sectionIdentifier, NSBundle *loadingBundle) {
+    CCSectionViewController *(^loadCustomSection)(NSString *sectionIdentifier, NSBundle *loadingBundle, CCBundleType type) = ^(NSString *sectionIdentifier, NSBundle *loadingBundle, CCBundleType type) {
         CCSectionViewController *sectionViewController = customSectionViewControllers[sectionIdentifier];
         
         if (!sectionViewController) {
-            sectionViewController = [[%c(CCSectionViewController) alloc] initWithBundle:loadingBundle];
+            sectionViewController = [[%c(CCSectionViewController) alloc] initWithBundle:loadingBundle type:type];
             [sectionViewController setDelegate:viewController];
             customSectionViewControllers[sectionIdentifier] = sectionViewController;
             
             [sectionViewController release];
         }
         
-        [usedCustomSections removeObject:sectionIdentifier];
+        if (cleanUnusedSections) {
+            [usedCustomSections removeObject:sectionIdentifier];
+        }
         
         [_sectionViewControllers addObject:sectionViewController];
         
@@ -154,7 +162,7 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCe
             NSBundle *replacingBundle = [replacingBundlesArray firstObject];
             
             if (replacingBundle) {
-                CCSectionViewController *section = loadCustomSection(sectionID, replacingBundle);
+                CCSectionViewController *section = loadCustomSection(sectionID, replacingBundle, CCBundleTypeDefault);
                 [section setReplacingSectionViewController:stockSectionViewControllerForID(contentView, sectionID)];
             }
             else {
@@ -162,17 +170,46 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCe
             }
         }
         else {
+            BOOL added = NO;
+            
             for (NSBundle *bundle in bundles) {
                 if ([bundle.bundleIdentifier isEqualToString:sectionID]) {
-                    loadCustomSection(sectionID, bundle);
+                    loadCustomSection(sectionID, bundle, CCBundleTypeDefault);
+                    added = YES;
                     break;
+                }
+            }
+            
+            if (!added) {
+                for (NSBundle *bundle in NCBundles) {
+                    if ([bundle.bundleIdentifier isEqualToString:sectionID]) {
+                        loadCustomSection(sectionID, bundle, CCBundleTypeWeeApp);
+                        added = YES;
+                        break;
+                    }
+                }
+                
+                if (!added) {
+                    for (NSBundle *bundle in oldNCBundles) {
+                        if ([bundle.bundleIdentifier isEqualToString:sectionID]) {
+                            loadCustomSection(sectionID, bundle, CCBundleTypeBBWeeApp);
+                            added = YES;
+                            break;
+                        }
+                    }
                 }
             }
         }
     }
     
-    for (NSString *unusedSection in usedCustomSections) {
-        [customSectionViewControllers removeObjectForKey:unusedSection];
+    [bundles release];
+    [NCBundles release];
+    [oldNCBundles release];
+    
+    if (cleanUnusedSections) {
+        for (NSString *unusedSection in usedCustomSections) {
+            [customSectionViewControllers removeObjectForKey:unusedSection];
+        }
     }
     
     if (!customSectionViewControllers.count) {
@@ -210,7 +247,7 @@ NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBC
     NSUInteger mediaControlsIndex = NSNotFound;
     NSUInteger landscapeMediaControlsIndex = NSNotFound;
     
-    
+    //Remove current section view controllers
     for (SBControlCenterSectionViewController *sectionViewController in landscapeSectionViewControllers) {
         [contentView _removeSectionController:sectionViewController];
     }
@@ -221,9 +258,9 @@ NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBC
     [landscapeStrippedSectionViewControllers release];
     landscapeStrippedSectionViewControllers = nil;
     
-    sectionViewControllers = sectionViewControllersForIDs(sectionsToLoad, viewController, contentView, &mediaControlsIndex);
+    sectionViewControllers = sectionViewControllersForIDs(sectionsToLoad, viewController, contentView, &mediaControlsIndex, NO);
     
-    landscapeSectionViewControllers = sectionViewControllersForIDs(landscapeSectionsToLoad.array, viewController, contentView, &landscapeMediaControlsIndex);
+    landscapeSectionViewControllers = sectionViewControllersForIDs(landscapeSectionsToLoad.array, viewController, contentView, &landscapeMediaControlsIndex, YES);
     
     
     [landscapeStrippedSectionViewControllers release];
@@ -299,7 +336,9 @@ NS_INLINE void reloadCCSections(void) {
     
     NSUInteger index = 0;
     
-    for (UIViewController *viewController in self._allSections.copy) {
+    NSArray *sections = self._allSections.copy;
+    
+    for (UIViewController *viewController in sections) {
         UIView *view = viewController.view;
         
         CGRect frame = view.frame;
@@ -325,6 +364,8 @@ NS_INLINE void reloadCCSections(void) {
         
         index++;
     }
+    
+    [sections release];
     
     if (scroller().superview != self) {
         [self addSubview:scroller()];
@@ -516,6 +557,19 @@ NS_INLINE void reloadCCSections(void) {
     return contentHeight;
 }
 
+- (void)controlCenterWillFinishTransitionOpen:(BOOL)open withDuration:(NSTimeInterval)duration {
+    if (open && !visible) {
+        visible = YES;
+        
+        dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(duration * NSEC_PER_SEC));
+        dispatch_after(popTime, dispatch_get_main_queue(), ^ {
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"CCDidAppearNotification" object:nil];
+        });
+    }
+
+    %orig;
+}
+
 - (void)controlCenterWillPresent {
     [[NSNotificationCenter defaultCenter] postNotificationName:@"CCWillAppearNotification" object:nil];
     
@@ -550,6 +604,8 @@ NS_INLINE void reloadCCSections(void) {
     [[NSNotificationCenter defaultCenter] postNotificationName:@"CCDidDisappearNotification" object:nil];
     
     contentHeightIsSet = NO;
+    
+    visible = NO;
 }
 
 %end
@@ -577,23 +633,44 @@ NS_INLINE void reloadCCSections(void) {
         
         NSMutableArray *disabledSections = [prefs[@"DisabledSections"] mutableCopy];
         
+        if (!disabledSections) {
+            disabledSections = [NSMutableArray array];
+        }
+        
         NSMutableOrderedSet *allIDs = [NSMutableOrderedSet orderedSetWithSet:loader.bundleIDs];
+        
         if (!allIDs) {
             allIDs = [NSMutableOrderedSet orderedSet];
         }
         
+        [allIDs addObjectsFromArray:loader.NCBundleIDs.allObjects];
+        
         [allIDs addObjectsFromArray:kCCLoaderStockOrderedSections];
         
         //Remove deleted bundles
-        for (NSString *ID in enabledSections.copy) {
+        NSUInteger i = 0;
+        
+        while (enabledSections.count > 0 && i < enabledSections.count) {
+            NSString *ID = enabledSections[i];
+            
             if (![allIDs containsObject:ID]) {
-                [enabledSections removeObject:ID];
+                [enabledSections removeObjectAtIndex:i];
+            }
+            else {
+                i++;
             }
         }
         
-        for (NSString *ID in disabledSections.copy) {
+        i = 0;
+        
+        while (disabledSections.count > 0 && i < disabledSections.count) {
+            NSString *ID = disabledSections[i];
+            
             if (![allIDs containsObject:ID]) {
-                [disabledSections removeObject:ID];
+                [disabledSections removeObjectAtIndex:i];
+            }
+            else {
+                i++;
             }
         }
         
@@ -601,17 +678,30 @@ NS_INLINE void reloadCCSections(void) {
         [allIDs minusSet:[NSSet setWithArray:enabledSections]];
         [allIDs minusSet:[NSSet setWithArray:disabledSections]];
         
+        NSSet *immutableAllIds = allIDs.copy;
+        
+        //Add new NC bundles to disabled sections
+        for (NSString *remaining in immutableAllIds) {
+            if ([loader.NCBundleIDs containsObject:remaining]) {
+                [disabledSections addObject:remaining];
+                
+                [allIDs removeObject:remaining];
+            }
+        }
+        
+        [immutableAllIds release];
+        
         [enabledSections addObjectsFromArray:allIDs.array];
         
-        if (enabledSections.count) {
-            prefs[@"EnabledSections"] = enabledSections.copy;
+        if (enabledSections) {
+            prefs[@"EnabledSections"] = enabledSections;
         }
         else {
             [prefs removeObjectForKey:@"EnabledSections"];
         }
         
-        if (disabledSections.count) {
-            prefs[@"DisabledSections"] = disabledSections.copy;
+        if (disabledSections) {
+            prefs[@"DisabledSections"] = disabledSections;
         }
         else {
             [prefs removeObjectForKey:@"DisabledSections"];
@@ -619,6 +709,8 @@ NS_INLINE void reloadCCSections(void) {
         
         [prefs writeToFile:kCCLoaderSettingsPath atomically:YES];
         
+        [enabledSections release];
+        [disabledSections release];
         
 		%init(main);
         

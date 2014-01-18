@@ -14,9 +14,15 @@
 
 #import "CCLoaderSettings/CCSection-Protocol.h"
 
+typedef NS_ENUM(NSUInteger, CCBundleType) {
+    CCBundleTypeDefault,
+    CCBundleTypeWeeApp,
+    CCBundleTypeBBWeeApp
+};
+
 @interface CCSectionViewController : SBControlCenterSectionViewController <CCSectionDelegate>
 
-- (id)initWithBundle:(NSBundle *)bundle;
+- (id)initWithBundle:(NSBundle *)bundle type:(CCBundleType)type;
 
 - (void)setReplacingSectionViewController:(SBControlCenterSectionViewController *)controller;
 - (SBControlCenterSectionViewController *)replacingSectionViewController;

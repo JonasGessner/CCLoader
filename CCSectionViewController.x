@@ -9,6 +9,10 @@
 #import "CCSectionViewController.h"
 #import "CCSectionView.h"
 
+#import "CCLoaderSettings/SpringBoardUIServices/_SBUIWidgetViewController.h"
+
+#import "CCLoaderSettings/BBWeeAppController-Protocol.h"
+
 #import <objc/runtime.h>
 #include <substrate.h>
 
@@ -16,31 +20,38 @@
 
 - (void)setBundle:(NSBundle *)bundle;
 
-- (void)setSection:(id <CCSection>)section;
-- (id <CCSection>)section;
+- (void)setSection:(_SBUIWidgetViewController <CCSection, BBWeeAppController> *)section;
+- (_SBUIWidgetViewController <CCSection, BBWeeAppController> *)section;
+
+- (CCBundleType)bundleType;
 
 @end
 
 %subclass CCSectionViewController : SBControlCenterSectionViewController <CCSectionDelegate>
 
 %new
-- (id)initWithBundle:(NSBundle *)bundle {
+- (id)initWithBundle:(NSBundle *)bundle type:(CCBundleType)type {
     self = [self init];
     if (self) {
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(controlCenterWillAppear) name:@"CCWillAppearNotification" object:nil];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(controlCenterDidDisappear) name:@"CCDidDisappearNotification" object:nil];
+        objc_setAssociatedObject(self, @selector(bundleType), @(type), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_CC_controlCenterWillAppear) name:@"CCWillAppearNotification" object:nil];
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_CC_controlCenterDidAppear) name:@"CCDidAppearNotification" object:nil];
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_CC_controlCenterDidDisappear) name:@"CCDidDisappearNotification" object:nil];
         
         [self setBundle:bundle];
 
         Class principalClass = [self.bundle principalClass];
         
-        id <CCSection> section = [[principalClass alloc] init];
+        _SBUIWidgetViewController <CCSection, BBWeeAppController> *section = [[principalClass alloc] init];
 
         [self setSection:section];
         
         [section release];
 
-        if ([self.section respondsToSelector:@selector(setDelegate:)]) {
+        if (type == CCBundleTypeDefault && [self.section respondsToSelector:@selector(setDelegate:)]) {
             [self.section setDelegate:self];
         }
     }
@@ -51,14 +62,16 @@
     %orig;
     
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCWillAppearNotification" object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCDidAppearNotification" object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCDidDisappearNotification" object:nil];
     
-    [self.section release];
     [self setSection:nil];
     
     [self.view release];
     self.view = nil;
     
+    [self.bundle unload];
+
     [self setBundle:nil];
     
     [self setReplacingSectionViewController:nil];
@@ -77,6 +90,11 @@
     else {
         [self.delegate sectionWantsControlCenterDismissal:self];
     }
+}
+
+%new
+- (CCBundleType)bundleType {
+    return (CCBundleType)[objc_getAssociatedObject(self, @selector(bundleType)) unsignedIntegerValue];
 }
 
 %new
@@ -110,24 +128,102 @@
 }
 
 - (void)loadView {
-    UIView *contentView = [self.section view];
-    
-    CCSectionView *view = [[%c(CCSectionView) alloc] initWithContentView:contentView];
+    CCSectionView *view = [[%c(CCSectionView) alloc] init];
 
+    if (self.bundleType == CCBundleTypeDefault || self.bundleType == CCBundleTypeWeeApp) {
+        UIView *contentView = [self.section view];
+        
+        [view setContentView:contentView];
+    }
+    
     self.view = view;
 }
 
 %new
-- (void)controlCenterWillAppear {
-    if ([self.section respondsToSelector:@selector(controlCenterWillAppear)]) {
+- (void)_CC_controlCenterWillAppear {
+    if (self.bundleType && CCBundleTypeDefault && [self.section respondsToSelector:@selector(controlCenterWillAppear)]) {
         [self.section controlCenterWillAppear];
+    }
+    else if (self.bundleType == CCBundleTypeBBWeeApp) {
+        if ([self.section respondsToSelector:@selector(loadView)]) {
+            [self.section loadView];
+        }
+        
+        if ([self.section respondsToSelector:@selector(loadPlaceholderView)]) {
+            [self.section loadPlaceholderView];
+        }
+        
+        UIView *contentView = self.section.view;
+        
+        for (UIView *sub in contentView.subviews) {
+            if ([sub isKindOfClass:[UIImageView class]]) {
+                [sub removeFromSuperview];
+                break;
+            }
+        }
+        
+        [((CCSectionView *)self.view) setContentView:contentView];
+        
+        if ([self.section respondsToSelector:@selector(viewWillAppear)]) {
+            [self.section viewWillAppear];
+        }
+    }
+    else if (self.bundleType == CCBundleTypeWeeApp) {
+        [self.section __hostWillPresent];
+        [self.section hostWillPresent];
+        
+        [self.section viewWillAppear];
     }
 }
 
 %new
-- (void)controlCenterDidDisappear {
-    if ([self.section respondsToSelector:@selector(controlCenterDidDisappear)]) {
+- (void)_CC_controlCenterDidAppear {
+    if (self.bundleType == CCBundleTypeBBWeeApp) {
+        
+        if ([self.section respondsToSelector:@selector(loadFullView)]) {
+            [self.section loadFullView];
+        }
+        
+        if ([self.section respondsToSelector:@selector(viewDidAppear)]) {
+            [self.section viewDidAppear];
+        }
+    }
+    else if (self.bundleType == CCBundleTypeWeeApp) {
+        [self.section viewDidAppear];
+        
+        [self.section __hostDidPresent];
+        [self.section hostDidPresent];
+    }
+}
+
+%new
+- (void)_CC_controlCenterDidDisappear {
+    if (self.bundleType && CCBundleTypeDefault && [self.section respondsToSelector:@selector(controlCenterDidDisappear)]) {
         [self.section controlCenterDidDisappear];
+    }
+    else if (self.bundleType == CCBundleTypeBBWeeApp) {
+        if ([self.section respondsToSelector:@selector(unloadView)]) {
+            [self.section unloadView];
+        }
+        
+        if ([self.section respondsToSelector:@selector(viewWillDisappear)]) {
+            [self.section viewWillDisappear];
+        }
+        if ([self.section respondsToSelector:@selector(viewDidDisappear)]) {
+            [self.section viewDidDisappear];
+        }
+        
+        [((CCSectionView *)self.view) setContentView:nil];
+    }
+    else if (self.bundleType == CCBundleTypeWeeApp) {
+        [self.section __hostWillDismiss];
+        [self.section hostWillDismiss];
+        
+        [self.section viewWillDisappear];
+        [self.section viewDidDisappear];
+        
+        [self.section __hostDidDismiss];
+        [self.section hostDidDismiss];
     }
 }
 
@@ -145,7 +241,24 @@
 
 %new
 - (CGFloat)height {
-    return [self.section sectionHeight];
+    if (self.bundleType == CCBundleTypeDefault) {
+        return [self.section sectionHeight];
+    }
+    else if (self.bundleType == CCBundleTypeBBWeeApp) {
+        if ([self.section respondsToSelector:@selector(viewHeight)]) {
+            return [self.section viewHeight];
+        }
+        else {
+            return 80.0f;
+        }
+    }
+    else if (self.bundleType == CCBundleTypeWeeApp) {
+        return [self.section preferredViewSize].height;
+    }
+    else {
+        NSLog(@"ZEROROROROROROROROROROROROROROR");
+        return 0.0f; //Damn son, if this ever happens then you've messed up big time.
+    }
 }
 
 - (BOOL)enabledForOrientation:(UIInterfaceOrientation)orientation {
@@ -162,7 +275,6 @@
         return CGSizeMake(CGFLOAT_MAX, self.height);
     }
 }
-
 
 
 - (NSUInteger)hash {

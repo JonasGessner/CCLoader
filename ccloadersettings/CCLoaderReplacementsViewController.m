@@ -1,12 +1,12 @@
 //
-//  CCLoaderSettingsListController.m
+//  CCLoaderReplacementsViewController.m
 //  CCLoader Settings
 //
 //  Created by Jonas Gessner on 04.01.2014.
 //  Copyright (c) 2014 Jonas Gessner. All rights reserved.
 //
 
-#import "CCLoaderSettingsListController.h"
+#import "CCLoaderReplacementsViewController.h"
 
 #import "CCBundleLoader.h"
 

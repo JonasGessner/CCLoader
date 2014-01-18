@@ -19,16 +19,6 @@
 
 %subclass CCSectionView : SBControlCenterSectionView
 
-%new
-- (id)initWithContentView:(UIView *)contentView {
-    self = [self init];
-    if (self) {
-        [self addSubview:contentView];
-        [self setContentView:contentView];
-    }
-    return self;
-}
-
 - (void)dealloc {
     %orig;
     
@@ -37,6 +27,12 @@
 
 %new
 - (void)setContentView:(UIView *)view {
+    [self.contentView removeFromSuperview];
+    
+    if (view) {
+        [self addSubview:view];
+    }
+    
     objc_setAssociatedObject(self, @selector(contentView), view, OBJC_ASSOCIATION_ASSIGN);
 }
 
@@ -47,6 +43,7 @@
 
 - (void)layoutSubviews {
     %orig;
+    
     self.contentView.frame = self.bounds;
 }
 

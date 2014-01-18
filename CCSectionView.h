@@ -13,7 +13,7 @@
 
 @interface CCSectionView : SBControlCenterSectionView
 
-- (instancetype)initWithContentView:(UIView *)contentView;
+- (void)setContentView:(UIView *)view;
 
 - (UIView *)contentView;
 

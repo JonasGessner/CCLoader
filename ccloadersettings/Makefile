@@ -11,7 +11,7 @@ CCLoaderSettings_CFLAGS = -fobjc-arc
 CCLoaderSettings_FILES = CCLoaderSettingsListController.m CCBundleLoader.m
 CCLoaderSettings_INSTALL_PATH = /Library/PreferenceBundles
 CCLoaderSettings_FRAMEWORKS = Foundation UIKit
-CCLoaderSettings_PRIVATE_FRAMEWORKS = Preferences
+CCLoaderSettings_PRIVATE_FRAMEWORKS = Preferences SpringBoardUIServices
 
 include $(THEOS_MAKE_PATH)/bundle.mk
 
