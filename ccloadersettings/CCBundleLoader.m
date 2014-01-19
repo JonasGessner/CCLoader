@@ -14,6 +14,13 @@
 
 #import "SpringBoardUIServices/_SBUIWidgetViewController.h"
 
+
+#define kCCLoaderStockCCDisplayNames @{@"com.apple.controlcenter.settings" : @"Settings", @"com.apple.controlcenter.brightness" : @"Brightness", @"com.apple.controlcenter.media-controls" : @"Media Controls", @"com.apple.controlcenter.air-stuff" : @"AirPlay/AirDrop", @"com.apple.controlcenter.quick-launch" : @"Quick Launch"}
+
+
+#define kCCLoaderStockNCDisplayNames @{@"com.apple.attributionweeapp.bundle" : @"Attribution Widget", @"com.apple.CalendarWidget" : @"Calendar Widget", @"com.apple.reminders.todaywidget" : @"Reminders Widget", @"com.apple.stocksweeapp.bundle" : @"Stocks Widget"}
+
+
 #define kCCSectionBundlePath @"/Library/CCLoader/Bundles"
 
 @implementation CCBundleLoader
@@ -29,7 +36,13 @@
     return instance;
 }
 
-- (void)loadNCBundles {
+- (NSMutableDictionary *)loadNCBundles:(BOOL)names {
+    NSMutableDictionary *displayNames = (names ? [NSMutableDictionary dictionary] : nil);
+    
+    if (names) {
+        [displayNames addEntriesFromDictionary:kCCLoaderStockNCDisplayNames];
+    }
+    
     NSString *bundlePath = @"/System/Library/WeeAppPlugins";
     
     NSString *bundlePath2 = @"/Library/WeeLoader/Plugins";
@@ -50,25 +63,51 @@
             
             NSBundle *bundle = [NSBundle bundleWithPath:path];
             
-            Class principalClass = [bundle principalClass];
+            NSDictionary *iOS7Info = [bundle objectForInfoDictionaryKey:@"SBUIWidgetViewControllers"];
             
-            NSLog(@"CLASSSS %@ %@", principalClass, bundle);
-            
-            if ([principalClass conformsToProtocol:@protocol(BBWeeAppController)]) {
-                [IDs addObject:bundle.bundleIdentifier];
+            if (iOS7Info.count) {
+                Class principalClass = [bundle classNamed:[iOS7Info.allValues lastObject]];
                 
-                [oldBundles addObject:bundle];
-            }
-            else if ([principalClass isKindOfClass:[_SBUIWidgetViewController class]]) {
-                [IDs addObject:bundle.bundleIdentifier];
-                
-                [newBundles addObject:bundle];
+                if ([principalClass isSubclassOfClass:[_SBUIWidgetViewController class]]) {
+                    NSString *ID = bundle.bundleIdentifier;
+                    
+                    [IDs addObject:ID];
+                    
+                    if (names) {
+                        NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+                        
+                        if (displayName && displayNames[ID] == nil) {
+                            displayNames[ID] = displayName;
+                        }
+                    }
+                    
+                    [newBundles addObject:bundle];
+                }
             }
             else {
-                //You gotta fix that penguin bro!
-                //..
-                //..
-                //Nope!
+                Class principalClass = [bundle principalClass];
+                
+                if ([principalClass conformsToProtocol:@protocol(BBWeeAppController)]) {
+                    NSString *ID = bundle.bundleIdentifier;
+                    
+                    [IDs addObject:ID];
+                    
+                    if (names) {
+                        NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+                        
+                        if (displayName && displayNames[ID] == nil) {
+                            displayNames[ID] = displayName;
+                        }
+                    }
+                    
+                    [oldBundles addObject:bundle];
+                }
+                else {
+                    //You gotta fix that penguin bro!
+                    //..
+                    //..
+                    //Nope!
+                }
             }
             
             [bundle unload];
@@ -81,23 +120,51 @@
             
             NSBundle *bundle = [NSBundle bundleWithPath:path];
             
-            Class principalClass = [bundle principalClass];
+            NSDictionary *iOS7Info = [bundle objectForInfoDictionaryKey:@"SBUIWidgetViewControllers"];
             
-            if ([principalClass conformsToProtocol:@protocol(BBWeeAppController)]) {
-                [IDs addObject:bundle.bundleIdentifier];
+            if (iOS7Info.count) {
+                Class principalClass = [bundle classNamed:[iOS7Info.allValues lastObject]];
                 
-                [oldBundles addObject:bundle];
-            }
-            else if ([principalClass isKindOfClass:[_SBUIWidgetViewController class]]) {
-                [IDs addObject:bundle.bundleIdentifier];
-                
-                [newBundles addObject:bundle];
+                if ([principalClass isSubclassOfClass:[_SBUIWidgetViewController class]]) {
+                    NSString *ID = bundle.bundleIdentifier;
+                    
+                    [IDs addObject:ID];
+                    
+                    if (names) {
+                        NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+                        
+                        if (displayName && displayNames[ID] == nil) {
+                            displayNames[ID] = displayName;
+                        }
+                    }
+                    
+                    [newBundles addObject:bundle];
+                }
             }
             else {
-                //You gotta fix that penguin bro!
-                //..
-                //..
-                //Nope!
+                Class principalClass = [bundle principalClass];
+                
+                if ([principalClass conformsToProtocol:@protocol(BBWeeAppController)]) {
+                    NSString *ID = bundle.bundleIdentifier;
+                    
+                    [IDs addObject:ID];
+                    
+                    if (names) {
+                        NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+                        
+                        if (displayName && displayNames[ID] == nil) {
+                            displayNames[ID] = displayName;
+                        }
+                    }
+                    
+                    [oldBundles addObject:bundle];
+                }
+                else {
+                    //You gotta fix that penguin bro!
+                    //..
+                    //..
+                    //Nope!
+                }
             }
             
             [bundle unload];
@@ -115,10 +182,16 @@
     if (IDs.count) {
         _NCBundleIDs = IDs.copy;
     }
+    
+    return displayNames;
 }
 
-- (void)loadBundles:(BOOL)alsoLoadReplacementBundles {
-    [self loadNCBundles];
+- (void)loadBundlesAndReplacements:(BOOL)alsoLoadReplacementBundles loadNames:(BOOL)names {
+    NSMutableDictionary *displayNames = [self loadNCBundles:names];
+    
+    if (names) {
+        [displayNames addEntriesFromDictionary:kCCLoaderStockCCDisplayNames];
+    }
     
     NSMutableSet *bundles = [NSMutableSet set];
     
@@ -150,12 +223,33 @@
                         replacements = [NSMutableArray array];
                     }
                     
+                    NSString *ID = bundle.bundleIdentifier;
+                    
+                    if (names) {
+                        NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+                        
+                        if (displayName && displayNames[ID] == nil) {
+                            displayNames[ID] = displayName;
+                        }
+                    }
+                    
                     [replacements addObject:bundle];
                     
                     replacingBundles[replaceID] = replacements;
                 }
                 else {
-                    [bundleIDs addObject:bundle.bundleIdentifier];
+                    NSString *ID = bundle.bundleIdentifier;
+                    
+                   [bundleIDs addObject:ID];
+                    
+                    if (names) {
+                        NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+                        
+                        if (displayName && displayNames[ID] == nil) {
+                            displayNames[ID] = displayName;
+                        }
+                    }
+                    
                     [bundles addObject:bundle];
                 }
             }
@@ -166,6 +260,10 @@
     
     if (alsoLoadReplacementBundles && replacingBundles.count) {
         _replacingBundles = replacingBundles.copy;
+    }
+    
+    if (names && displayNames.count) {
+        _displayNames = displayNames.copy;
     }
     
     if (bundles.count) {
@@ -183,6 +281,7 @@
     [_oldNCBundles release];
     [_NCBundles release];
     [_NCBundleIDs release];
+    [_displayNames release];
 #endif
     
     _bundles = nil;
@@ -191,6 +290,7 @@
     _oldNCBundles = nil;
     _NCBundles = nil;
     _NCBundleIDs = nil;
+    _displayNames = nil;
 }
 
 - (void)dealloc {

@@ -8,6 +8,8 @@
 
 #import "CCLoaderSettingsListController.h"
 
+#import "CCLoaderReplacementsViewController.h"
+
 #import "CCBundleLoader.h"
 
 
@@ -20,7 +22,7 @@
     NSMutableOrderedSet *_enabled;
     NSMutableOrderedSet *_disabled;
     
-    NSDictionary *_displayNames;
+    NSMutableDictionary *_replacements;
     
     BOOL _dynamicMediaControls;
     BOOL _hideSeparators;
@@ -31,12 +33,6 @@
 @implementation CCLoaderSettingsListController
 
 #define kYear [[[NSCalendar currentCalendar] components:NSYearCalendarUnit fromDate:[NSDate date]] year]
-
-#define kCCLoaderStockOrderedSections @[@"com.apple.controlcenter.settings", @"com.apple.controlcenter.brightness", @"com.apple.controlcenter.media-controls", @"com.apple.controlcenter.air-stuff", @"com.apple.controlcenter.quick-launch"]
-
-#define kCCLoaderStockDisplayNames @{@"com.apple.controlcenter.settings" : @"Settings", @"com.apple.controlcenter.brightness" : @"Brightness", @"com.apple.controlcenter.media-controls" : @"Media Controls", @"com.apple.controlcenter.air-stuff" : @"AirPlay/AirDrop", @"com.apple.controlcenter.quick-launch" : @"Quick Launch"}
-
-#define kCCLoaderStockSections [NSSet setWithArray:kCCLoaderStockOrderedSections]
 
 #define kCCLoaderSettingsPath [[NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) firstObject] stringByAppendingPathComponent:@"Preferences/de.j-gessner.ccloader.plist"]
 
@@ -54,7 +50,7 @@
         self.navigationItem.rightBarButtonItem = barButtton;
         
         CCBundleLoader *loader = [CCBundleLoader sharedInstance];
-        [loader loadBundles:YES];
+        [loader loadBundlesAndReplacements:YES loadNames:YES];
         
         NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:kCCLoaderSettingsPath];
         
@@ -65,18 +61,7 @@
         
         _disabled = [NSMutableOrderedSet orderedSetWithArray:prefs[@"DisabledSections"]];
         
-        NSMutableDictionary *displayNames = [kCCLoaderStockDisplayNames mutableCopy];
-        
-        for (NSBundle *bundle in loader.bundles) {
-            NSString *ID = bundle.bundleIdentifier;
-            
-            NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
-            if (displayName) {
-                displayNames[ID] = displayName;
-            }
-        }
-        
-        _displayNames = displayNames.copy;
+        _replacements = [prefs[@"ReplacingBundles"] mutableCopy];
     }
     
     return self;
@@ -169,6 +154,10 @@
     
     if (_hideSeparators) {
         prefs[@"HideSeparators"] = @(YES);
+    }
+    
+    if (_replacements) {
+        prefs[@"ReplacingBundles"] = _replacements;
     }
     
     [prefs.copy writeToFile:kCCLoaderSettingsPath atomically:YES];
@@ -281,9 +270,9 @@
     else if ((indexPath.section == 0 && _enabled.count) || (indexPath.section == 1 && _disabled.count)) {
         NSString *ID = (indexPath.section == 0 ? _enabled[indexPath.row] : _disabled[indexPath.row]);
         
-        NSString *displayName = _displayNames[ID];
-        
         CCBundleLoader *loader = [CCBundleLoader sharedInstance];
+        
+        NSString *displayName = loader.displayNames[ID];
         
         NSDictionary *replacements = loader.replacingBundles;
         
@@ -352,7 +341,23 @@
         NSString *ID = (indexPath.section == 0 ? _enabled[indexPath.row] : _disabled[indexPath.row]);
         
         if ([replacements[ID] count] > 1) {
-            [self.navigationController pushViewController:[UIViewController new] animated:YES];
+            NSMutableDictionary *replacementNames = [NSMutableDictionary dictionaryWithCapacity:[replacements[ID] count]];
+            
+            for (NSBundle *r in replacements[ID]) {
+                replacementNames[r.bundleIdentifier] = loader.displayNames[r.bundleIdentifier];
+            }
+            
+            NSString *selected = _replacements[ID];
+            
+            CCLoaderReplacementsViewController *replacementVC = [[CCLoaderReplacementsViewController alloc] initWithReplacements:replacementNames selected:selected selectedCallback:^(NSString *selected) {
+                _replacements[ID] = selected;
+                
+                [self syncPrefs:YES];
+            }];
+            
+            replacementVC.title = [NSString stringWithFormat:@"%@ Section", loader.displayNames[ID]];
+            
+            [self.navigationController pushViewController:replacementVC animated:YES];
         }
     }
 }

@@ -33,7 +33,7 @@
         [self addSubview:view];
     }
     
-    objc_setAssociatedObject(self, @selector(contentView), view, OBJC_ASSOCIATION_ASSIGN);
+    objc_setAssociatedObject(self, @selector(contentView), view, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 %new

@@ -106,7 +106,7 @@ NS_INLINE void setStockSectionViewControllerForID(SBControlCenterContentView *co
     }
 }
 
-NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCenterViewController *viewController, SBControlCenterContentView *contentView, NSUInteger *mediaControlsIndex, BOOL cleanUnusedSections) {
+NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionary *replacements, SBControlCenterViewController *viewController, SBControlCenterContentView *contentView, NSUInteger *mediaControlsIndex, BOOL cleanUnusedSections) {
     CCBundleLoader *loader = [CCBundleLoader sharedInstance];
     
     NSMutableArray *_sectionViewControllers = [[NSMutableArray alloc] initWithCapacity:IDs.count];
@@ -157,12 +157,23 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, SBControlCe
                 }
             }
             
-            NSArray *replacingBundlesArray = replacingBundles[sectionID];
+            NSBundle *replacingBundle = nil;
             
-            NSBundle *replacingBundle = [replacingBundlesArray firstObject];
+            
+            NSString *replacingID = replacements[sectionID];
+            
+            if (replacingID) {
+                for (NSBundle *bundle in replacingBundles[sectionID]) {
+                    if ([bundle.bundleIdentifier isEqualToString:replacingID]) {
+                        replacingBundle = bundle;
+                        break;
+                    }
+                }
+            }
             
             if (replacingBundle) {
-                CCSectionViewController *section = loadCustomSection(sectionID, replacingBundle, CCBundleTypeDefault);
+                CCSectionViewController *section = loadCustomSection(replacingID, replacingBundle, CCBundleTypeDefault);
+                
                 [section setReplacingSectionViewController:stockSectionViewControllerForID(contentView, sectionID)];
             }
             else {
@@ -228,6 +239,8 @@ NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBC
     
     NSArray *sectionsToLoad = (iPad ? kCCLoaderStockOrderedSections : prefs[@"EnabledSections"]);
     
+    NSDictionary *replacements = prefs[@"ReplacingBundles"];
+    
     if (!sectionsToLoad) {
         sectionsToLoad = kCCLoaderStockOrderedSections;
     }
@@ -258,9 +271,9 @@ NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBC
     [landscapeStrippedSectionViewControllers release];
     landscapeStrippedSectionViewControllers = nil;
     
-    sectionViewControllers = sectionViewControllersForIDs(sectionsToLoad, viewController, contentView, &mediaControlsIndex, NO);
+    sectionViewControllers = sectionViewControllersForIDs(sectionsToLoad, replacements, viewController, contentView, &mediaControlsIndex, NO);
     
-    landscapeSectionViewControllers = sectionViewControllersForIDs(landscapeSectionsToLoad.array, viewController, contentView, &landscapeMediaControlsIndex, YES);
+    landscapeSectionViewControllers = sectionViewControllersForIDs(landscapeSectionsToLoad.array, replacements, viewController, contentView, &landscapeMediaControlsIndex, YES);
     
     
     [landscapeStrippedSectionViewControllers release];
@@ -557,6 +570,13 @@ NS_INLINE void reloadCCSections(void) {
     return contentHeight;
 }
 
+- (void)controlCenterWillBeginTransition {
+    if (visible) {
+        visible = NO;
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"CCWillDisappearNotification" object:nil];
+    }
+}
+
 - (void)controlCenterWillFinishTransitionOpen:(BOOL)open withDuration:(NSTimeInterval)duration {
     if (open && !visible) {
         visible = YES;
@@ -617,7 +637,7 @@ NS_INLINE void reloadCCSections(void) {
 %ctor {
 	@autoreleasepool {
         CCBundleLoader *loader = [CCBundleLoader sharedInstance];
-        [loader loadBundles:YES];
+        [loader loadBundlesAndReplacements:YES loadNames:NO];
         
         NSMutableDictionary *prefs = [NSMutableDictionary dictionaryWithContentsOfFile:kCCLoaderSettingsPath];
         
@@ -707,8 +727,61 @@ NS_INLINE void reloadCCSections(void) {
             [prefs removeObjectForKey:@"DisabledSections"];
         }
         
+        
+        
+        NSMutableDictionary *replacing = loader.replacingBundles.mutableCopy;
+        
+        if (!replacing.count) {
+            [prefs removeObjectForKey:@"ReplacingBundles"];
+        }
+        else {
+            NSMutableDictionary *replacements = [prefs[@"ReplacingBundles"] mutableCopy];
+            
+            if (!replacements) {
+                replacements = [[NSMutableDictionary alloc] init];
+            }
+            
+            for (NSString *key in [replacements.copy autorelease]) {
+                NSArray *replacementBundles = replacing[key];
+                
+                NSString *setReplacementID = replacements[key];
+                
+                if (replacementBundles) {
+                    BOOL found = NO;
+                    
+                    for (NSBundle *bundle in replacementBundles) {
+                        if ([bundle.bundleIdentifier isEqualToString:setReplacementID]) {
+                            found = YES;
+                            break;
+                        }
+                    }
+                    
+                    if (!found) {
+                        replacements[key] = [replacementBundles.firstObject bundleIdentifier];
+                    }
+                    
+                    [replacing removeObjectForKey:key];
+                }
+                else {
+                    [replacements removeObjectForKey:key];
+                }
+            }
+            
+            for (NSString *key in replacing) {
+                NSArray *replacementBundles = replacing[key];
+                
+                replacements[key] = [replacementBundles.firstObject bundleIdentifier];
+            }
+            
+            prefs[@"ReplacingBundles"] = replacements;
+            
+            [replacements release];
+        }
+        
+        
         [prefs writeToFile:kCCLoaderSettingsPath atomically:YES];
         
+        [replacing release];
         [enabledSections release];
         [disabledSections release];
         

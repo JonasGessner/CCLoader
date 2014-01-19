@@ -16,6 +16,8 @@
 #import <objc/runtime.h>
 #include <substrate.h>
 
+#define selfView ((CCSectionView *)self.view)
+
 @interface CCSectionViewController ()
 
 - (void)setBundle:(NSBundle *)bundle;
@@ -27,7 +29,7 @@
 
 @end
 
-%subclass CCSectionViewController : SBControlCenterSectionViewController <CCSectionDelegate>
+%subclass CCSectionViewController : SBControlCenterSectionViewController <CCSectionDelegate, _SBUIWidgetHost>
 
 %new
 - (id)initWithBundle:(NSBundle *)bundle type:(CCBundleType)type {
@@ -39,18 +41,33 @@
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_CC_controlCenterDidAppear) name:@"CCDidAppearNotification" object:nil];
         
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_CC_controlCenterWillDisappear) name:@"CCWillDisappearNotification" object:nil];
+        
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_CC_controlCenterDidDisappear) name:@"CCDidDisappearNotification" object:nil];
         
         [self setBundle:bundle];
-
-        Class principalClass = [self.bundle principalClass];
+        
+        
+        Class principalClass = Nil;
+        
+        if (type == CCBundleTypeWeeApp) {
+            principalClass = [bundle classNamed:[[[bundle objectForInfoDictionaryKey:@"SBUIWidgetViewControllers"] allValues] lastObject]];
+        }
+        else {
+            principalClass = [self.bundle principalClass];
+        }
         
         _SBUIWidgetViewController <CCSection, BBWeeAppController> *section = [[principalClass alloc] init];
 
-        [self setSection:section];
+         if (type == CCBundleTypeWeeApp) {
+             [section setWidgetHost:self];
+         }
         
-        [section release];
+        [self setSection:section];
 
+        [section release];
+        
         if (type == CCBundleTypeDefault && [self.section respondsToSelector:@selector(setDelegate:)]) {
             [self.section setDelegate:self];
         }
@@ -63,7 +80,20 @@
     
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCWillAppearNotification" object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCDidAppearNotification" object:nil];
+    
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCWillDisappearNotification" object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCDidDisappearNotification" object:nil];
+    
+    if (self.bundleType == CCBundleTypeWeeApp) {
+        [self.section willMoveToParentViewController:nil];
+        [selfView setContentView:nil];
+        [self.section removeFromParentViewController];
+    }
+    else {
+        [selfView setContentView:nil];
+    }
+    
+    [self.section setWidgetHost:nil];
     
     [self setSection:nil];
     
@@ -76,6 +106,26 @@
     
     [self setReplacingSectionViewController:nil];
 }
+
+#pragma mark - _SBUIWidgetHost
+
+%new
+- (void)invalidatePreferredViewSize {
+    
+}
+
+%new
+- (void)requestLaunchOfURL:(NSURL *)arg1 {
+    
+}
+
+%new
+- (void)requestPresentationOfViewController:(NSString *)arg1 presentationStyle:(long long)arg2 context:(NSDictionary *)arg3 completion:(void (^)(void))arg4 {
+    
+}
+
+
+#pragma mark - CCSectionDelegate
 
 %new
 - (void)updateStatusText:(NSString *)text {
@@ -129,11 +179,16 @@
 
 - (void)loadView {
     CCSectionView *view = [[%c(CCSectionView) alloc] init];
-
-    if (self.bundleType == CCBundleTypeDefault || self.bundleType == CCBundleTypeWeeApp) {
-        UIView *contentView = [self.section view];
+    
+    if (self.bundleType == CCBundleTypeDefault) {
+        [view setContentView:self.section.view];
+    }
+    else if (self.bundleType == CCBundleTypeWeeApp) {
+        [self addChildViewController:self.section];
         
-        [view setContentView:contentView];
+        [view setContentView:self.section.view];
+        
+        [self.section didMoveToParentViewController:self];
     }
     
     self.view = view;
@@ -153,6 +208,10 @@
             [self.section loadPlaceholderView];
         }
         
+        if ([self.section respondsToSelector:@selector(viewWillAppear)]) {
+            [self.section viewWillAppear];
+        }
+        
         UIView *contentView = self.section.view;
         
         for (UIView *sub in contentView.subviews) {
@@ -162,24 +221,16 @@
             }
         }
         
-        [((CCSectionView *)self.view) setContentView:contentView];
-        
-        if ([self.section respondsToSelector:@selector(viewWillAppear)]) {
-            [self.section viewWillAppear];
-        }
+        [selfView setContentView:contentView];
     }
     else if (self.bundleType == CCBundleTypeWeeApp) {
-        [self.section __hostWillPresent];
         [self.section hostWillPresent];
-        
-        [self.section viewWillAppear];
     }
 }
 
 %new
 - (void)_CC_controlCenterDidAppear {
     if (self.bundleType == CCBundleTypeBBWeeApp) {
-        
         if ([self.section respondsToSelector:@selector(loadFullView)]) {
             [self.section loadFullView];
         }
@@ -189,12 +240,15 @@
         }
     }
     else if (self.bundleType == CCBundleTypeWeeApp) {
-        [self.section viewDidAppear];
-        
-        [self.section __hostDidPresent];
         [self.section hostDidPresent];
     }
 }
+
+
+%new
+- (void)_CC_controlCenterWillDisappear {
+}
+
 
 %new
 - (void)_CC_controlCenterDidDisappear {
@@ -213,16 +267,11 @@
             [self.section viewDidDisappear];
         }
         
-        [((CCSectionView *)self.view) setContentView:nil];
+        [selfView setContentView:nil];
     }
     else if (self.bundleType == CCBundleTypeWeeApp) {
-        [self.section __hostWillDismiss];
         [self.section hostWillDismiss];
         
-        [self.section viewWillDisappear];
-        [self.section viewDidDisappear];
-        
-        [self.section __hostDidDismiss];
         [self.section hostDidDismiss];
     }
 }
@@ -256,7 +305,6 @@
         return [self.section preferredViewSize].height;
     }
     else {
-        NSLog(@"ZEROROROROROROROROROROROROROROR");
         return 0.0f; //Damn son, if this ever happens then you've messed up big time.
     }
 }

@@ -27,8 +27,13 @@
 
 + (instancetype)sharedInstance;
 
-- (void)loadBundles:(BOOL)alsoLoadReplacementBundles;
+- (void)loadBundlesAndReplacements:(BOOL)alsoLoadReplacementBundles loadNames:(BOOL)names;
+
 - (void)unloadBundles;
+
+
+@property (nonatomic, CC_STRONG, readonly) NSDictionary *displayNames;
+
 
 @property (nonatomic, CC_STRONG, readonly) NSSet *oldNCBundles;
 

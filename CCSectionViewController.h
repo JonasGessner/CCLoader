@@ -12,6 +12,8 @@
 #import "ControlCenter/SBControlCenterSectionViewController.h"
 #import "ControlCenter/SBControlCenterSectionView.h"
 
+#import "CCLoaderSettings/SpringBoardUIServices/_SBUIWidgetHost.h"
+
 #import "CCLoaderSettings/CCSection-Protocol.h"
 
 typedef NS_ENUM(NSUInteger, CCBundleType) {
@@ -20,7 +22,7 @@ typedef NS_ENUM(NSUInteger, CCBundleType) {
     CCBundleTypeBBWeeApp
 };
 
-@interface CCSectionViewController : SBControlCenterSectionViewController <CCSectionDelegate>
+@interface CCSectionViewController : SBControlCenterSectionViewController <CCSectionDelegate, _SBUIWidgetHost>
 
 - (id)initWithBundle:(NSBundle *)bundle type:(CCBundleType)type;
 
