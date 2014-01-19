@@ -11,6 +11,6 @@
 
 @interface CCLoaderReplacementsViewController : UITableViewController
 
-- (instancetype)initWithReplacements:(NSDictionary *)replacements selected:(NSString *)currentSelected selectedCallback:(void (^)(NSString *selected))callback;
+- (instancetype)initWithReplacements:(NSDictionary *)replacements selected:(NSString *)currentSelected orderedKeys:(NSArray *)ordered selectedCallback:(void (^)(NSString *selected))callback;
 
 @end

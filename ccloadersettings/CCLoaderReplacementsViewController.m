@@ -22,12 +22,12 @@
 
 @implementation CCLoaderReplacementsViewController
 
-- (instancetype)initWithReplacements:(NSDictionary *)replacements selected:(NSString *)currentSelected selectedCallback:(void (^)(NSString *selected))callback {
+- (instancetype)initWithReplacements:(NSDictionary *)replacements selected:(NSString *)currentSelected orderedKeys:(NSArray *)ordered selectedCallback:(void (^)(NSString *selected))callback {
     self = [super initWithStyle:UITableViewStyleGrouped];
     
     if (self) {
         _replacements = replacements;
-        _replacementsOrdered = [NSOrderedSet orderedSetWithArray:_replacements.allKeys];
+        _replacementsOrdered = [NSOrderedSet orderedSetWithArray:ordered];
         _selected = currentSelected;
         _callback = callback;
     }
@@ -52,7 +52,7 @@
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
-    return @"Select a replacement section";
+    return @"Select a section";
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {

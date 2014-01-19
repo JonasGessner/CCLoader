@@ -21,7 +21,7 @@ Stock Control Center sections can also be replaced with a custom bundle. The NIC
 CCLoader checks for `CCReplacingStockSectionID` in the bundle's Info.plist file. if any of the above values is given for that key then the corresponding stock section will be replaced. Otherwise the bundle will be recognized as a new section for Control Center.
 <br>
 <br>
-If a stock section is replaced, the section replacing the original section will automatically be the same size as the original section, therefore the section height specified in the replacing section will be ignored and is irrelevant.
+A custom section that replaced a stock section has two options regarding the sections height: The custom section can return `CGFLOAT_MIN` as `sectionHeight`, in that case the height of the section that is replaced will be used. If the custom section returns anything other than `CGFLOAT_MIN` then that height will be used. This functionality is limited to iPone/iPod touch and to portrait mode. In landscape or on an iPad the height of the section that is being replaced will be used.
 <br>
 <br>
 ###iPad Support

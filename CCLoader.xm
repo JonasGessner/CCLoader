@@ -12,6 +12,11 @@
 #include <substrate.h>
 #import <objc/runtime.h>
 
+#import "CCLoaderSettings/CCSection-Protocol.h"
+#import "CCLoaderSettings/BBWeeAppController-Protocol.h"
+#import "CCLoaderSettings/SpringBoardUIServices/_SBUIWidgetViewController.h"
+
+
 #import "CCLoaderSettings/CCBundleLoader.h"
 #import "CCSectionViewController.h"
 #import "CCScrollView.h"
@@ -106,6 +111,29 @@ NS_INLINE void setStockSectionViewControllerForID(SBControlCenterContentView *co
     }
 }
 
+NS_INLINE BOOL checkBundleForType(NSBundle *bundle, CCBundleType type) {
+    if (type == CCBundleTypeDefault) {
+        Class principalClass = [bundle principalClass];
+        
+        return [principalClass conformsToProtocol:@protocol(CCSection)];
+    }
+    else if (type == CCBundleTypeBBWeeApp) {
+        Class principalClass = [bundle principalClass];
+        
+        return [principalClass conformsToProtocol:@protocol(BBWeeAppController)];
+    }
+    else if (type == CCBundleTypeWeeApp) {
+        NSDictionary *iOS7Info = [bundle objectForInfoDictionaryKey:@"SBUIWidgetViewControllers"];
+        
+        Class principalClass = [bundle classNamed:[iOS7Info.allValues lastObject]];
+        
+        return [principalClass isSubclassOfClass:[_SBUIWidgetViewController class]];
+        
+    }
+    
+    return NO;
+}
+
 NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionary *replacements, SBControlCenterViewController *viewController, SBControlCenterContentView *contentView, NSUInteger *mediaControlsIndex, BOOL cleanUnusedSections) {
     CCBundleLoader *loader = [CCBundleLoader sharedInstance];
     
@@ -127,26 +155,34 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
     
     NSMutableSet *usedCustomSections = (cleanUnusedSections ? [NSMutableSet setWithArray:customSectionViewControllers.allKeys] : nil);
     
-    CCSectionViewController *(^loadCustomSection)(NSString *sectionIdentifier, NSBundle *loadingBundle, CCBundleType type) = ^(NSString *sectionIdentifier, NSBundle *loadingBundle, CCBundleType type) {
-        CCSectionViewController *sectionViewController = customSectionViewControllers[sectionIdentifier];
-        
-        if (!sectionViewController) {
-            sectionViewController = [[%c(CCSectionViewController) alloc] initWithBundle:loadingBundle type:type];
-            [sectionViewController setDelegate:viewController];
-            customSectionViewControllers[sectionIdentifier] = sectionViewController;
+    CCSectionViewController *(^loadCustomSection)(NSString *sectionIdentifier, NSBundle *loadingBundle, CCBundleType type) = ^CCSectionViewController * (NSString *sectionIdentifier, NSBundle *loadingBundle, CCBundleType type) {
+        if (!checkBundleForType(loadingBundle, type)) {
+            [loadingBundle unload];
             
-            [sectionViewController release];
+            return nil;
         }
-        
-        if (cleanUnusedSections) {
-            [usedCustomSections removeObject:sectionIdentifier];
+        else {
+            CCSectionViewController *sectionViewController = customSectionViewControllers[sectionIdentifier];
+            
+            if (!sectionViewController) {
+                sectionViewController = [[%c(CCSectionViewController) alloc] initWithBundle:loadingBundle type:type];
+                [sectionViewController setDelegate:viewController];
+                
+                customSectionViewControllers[sectionIdentifier] = sectionViewController;
+                
+                [sectionViewController release];
+            }
+            
+            if (cleanUnusedSections) {
+                [usedCustomSections removeObject:sectionIdentifier];
+            }
+            
+            [_sectionViewControllers addObject:sectionViewController];
+            
+            [bundles removeObject:loadingBundle];
+            
+            return sectionViewController;
         }
-        
-        [_sectionViewControllers addObject:sectionViewController];
-        
-        [bundles removeObject:loadingBundle];
-        
-        return sectionViewController;
     };
     
     for (NSString *sectionID in IDs) {
@@ -162,22 +198,27 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
             
             NSString *replacingID = replacements[sectionID];
             
-            if (replacingID) {
-                for (NSBundle *bundle in replacingBundles[sectionID]) {
-                    if ([bundle.bundleIdentifier isEqualToString:replacingID]) {
-                        replacingBundle = bundle;
-                        break;
-                    }
-                }
-            }
-            
-            if (replacingBundle) {
-                CCSectionViewController *section = loadCustomSection(replacingID, replacingBundle, CCBundleTypeDefault);
-                
-                [section setReplacingSectionViewController:stockSectionViewControllerForID(contentView, sectionID)];
+            if ([replacingID isEqualToString:@"de.j-gessner.ccloader.reserved.defaultStockSection"]) {
+                [_sectionViewControllers addObject:stockSectionViewControllerForID(contentView, sectionID)];
             }
             else {
-                [_sectionViewControllers addObject:stockSectionViewControllerForID(contentView, sectionID)];
+                if (replacingID) {
+                    for (NSBundle *bundle in replacingBundles[sectionID]) {
+                        if ([bundle.bundleIdentifier isEqualToString:replacingID]) {
+                            replacingBundle = bundle;
+                            break;
+                        }
+                    }
+                }
+                
+                if (replacingBundle) {
+                    CCSectionViewController *section = loadCustomSection(replacingID, replacingBundle, CCBundleTypeDefault);
+                    
+                    [section setReplacingSectionViewController:stockSectionViewControllerForID(contentView, sectionID)];
+                }
+                else {
+                    [_sectionViewControllers addObject:stockSectionViewControllerForID(contentView, sectionID)];
+                }
             }
         }
         else {
@@ -637,7 +678,8 @@ NS_INLINE void reloadCCSections(void) {
 %ctor {
 	@autoreleasepool {
         CCBundleLoader *loader = [CCBundleLoader sharedInstance];
-        [loader loadBundlesAndReplacements:YES loadNames:NO];
+        
+        [loader loadBundlesAndReplacements:YES loadNames:NO checkBundles:NO];
         
         NSMutableDictionary *prefs = [NSMutableDictionary dictionaryWithContentsOfFile:kCCLoaderSettingsPath];
         

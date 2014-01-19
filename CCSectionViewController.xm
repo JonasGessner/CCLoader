@@ -20,6 +20,8 @@
 
 #include <substrate.h>
 
+#define iPad (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
+
 #define selfView ((CCSectionView *)self.view)
 
 @interface CCSectionViewController ()
@@ -307,14 +309,14 @@
             return [self.section viewHeight];
         }
         else {
-            return 80.0f;
+            return 80.0f; //What?
         }
     }
     else if (self.bundleType == CCBundleTypeWeeApp) {
         return [self.section preferredViewSize].height;
     }
     else {
-        return 0.0f; //Damn son, if this ever happens then you've messed up big time.
+        return 0.0f;
     }
 }
 
@@ -325,11 +327,18 @@
 - (CGSize)contentSizeForOrientation:(UIInterfaceOrientation)orientation {
     SBControlCenterSectionViewController *replacingSection = self.replacingSectionViewController;
     
+    CGFloat height = self.height;
+    
     if (replacingSection) {
-        return [replacingSection contentSizeForOrientation:orientation];
+        if (height != CGFLOAT_MIN && !UIInterfaceOrientationIsLandscape(orientation) && !iPad) {
+            return CGSizeMake(CGFLOAT_MAX, height);
+        }
+        else {
+            return [replacingSection contentSizeForOrientation:orientation];
+        }
     }
     else {
-        return CGSizeMake(CGFLOAT_MAX, self.height);
+        return CGSizeMake(CGFLOAT_MAX, height);
     }
 }
 

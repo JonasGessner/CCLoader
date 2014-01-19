@@ -50,12 +50,18 @@
         self.navigationItem.rightBarButtonItem = barButtton;
         
         CCBundleLoader *loader = [CCBundleLoader sharedInstance];
-        [loader loadBundlesAndReplacements:YES loadNames:YES];
+        
+        [loader loadBundlesAndReplacements:YES loadNames:YES checkBundles:NO];
         
         NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:kCCLoaderSettingsPath];
         
         _dynamicMediaControls = [prefs[@"HideMediaControls"] boolValue];
-        _hideSeparators = [prefs[@"HideSeparators"] boolValue];
+        
+        NSNumber *hideSep = prefs[@"HideSeparators"];
+        
+        if (hideSep) {
+            _hideSeparators = [prefs[@"HideSeparators"] boolValue];
+        }
         
         _enabled = [NSMutableOrderedSet orderedSetWithArray:prefs[@"EnabledSections"]];
         
@@ -174,7 +180,7 @@
 }
 
 - (void)hideSeparatorsSwitched:(UISwitch *)sender {
-    _hideSeparators = sender.on;
+    _hideSeparators = !sender.on;
     
     [self syncPrefs:YES];
 }
@@ -248,13 +254,13 @@
     if (indexPath.section == 2) {
         if (indexPath.row == 0) {
             UISwitch *accessory = [UISwitch new];
-            accessory.on = _hideSeparators;
+            accessory.on = !_hideSeparators;
             
             [accessory addTarget:self action:@selector(hideSeparatorsSwitched:) forControlEvents:UIControlEventValueChanged];
             
             cell.accessoryView = accessory;
             
-            cell.textLabel.text = @"Hide Separators";
+            cell.textLabel.text = @"Show Separators";
         }
         else if (indexPath.row == 1) {
             UISwitch *accessory = [UISwitch new];
@@ -276,7 +282,7 @@
         
         NSDictionary *replacements = loader.replacingBundles;
         
-        cell.editingAccessoryType = ([replacements[ID] count] > 1 ? UITableViewCellAccessoryDisclosureIndicator : UITableViewCellAccessoryNone);
+        cell.editingAccessoryType = ([replacements[ID] count] ? UITableViewCellAccessoryDisclosureIndicator : UITableViewCellAccessoryNone);
         
         cell.textLabel.text = (displayName ? : ID);
         
@@ -317,7 +323,7 @@
         
         NSString *ID = (indexPath.section == 0 ? _enabled[indexPath.row] : _disabled[indexPath.row]);
         
-        return ([replacements[ID] count] > 1);
+        return ([replacements[ID] count] > 0);
     }
     else {
         return NO;
@@ -340,16 +346,29 @@
         
         NSString *ID = (indexPath.section == 0 ? _enabled[indexPath.row] : _disabled[indexPath.row]);
         
-        if ([replacements[ID] count] > 1) {
-            NSMutableDictionary *replacementNames = [NSMutableDictionary dictionaryWithCapacity:[replacements[ID] count]];
+        if ([replacements[ID] count]) {
+            NSUInteger expectedSize = [replacements[ID] count]+1;
+            
+            NSMutableDictionary *replacementNames = [NSMutableDictionary dictionaryWithCapacity:expectedSize];
+            
+            NSMutableArray *orderedKeys = [NSMutableArray arrayWithCapacity:expectedSize];
+            
+            void (^addEntry)(NSString *key, NSString *value) = ^ (NSString *key, NSString *value) {
+                [orderedKeys addObject:key];
+                replacementNames[key] = value;
+            };
+            
+            addEntry(@"de.j-gessner.ccloader.reserved.defaultStockSection", @"Default Section");
             
             for (NSBundle *r in replacements[ID]) {
-                replacementNames[r.bundleIdentifier] = loader.displayNames[r.bundleIdentifier];
+                NSString *bundleIdentifier = r.bundleIdentifier;
+                
+                addEntry(bundleIdentifier, loader.displayNames[bundleIdentifier]);
             }
-            
+
             NSString *selected = _replacements[ID];
             
-            CCLoaderReplacementsViewController *replacementVC = [[CCLoaderReplacementsViewController alloc] initWithReplacements:replacementNames selected:selected selectedCallback:^(NSString *selected) {
+            CCLoaderReplacementsViewController *replacementVC = [[CCLoaderReplacementsViewController alloc] initWithReplacements:replacementNames.copy selected:selected orderedKeys:orderedKeys.copy selectedCallback:^(NSString *selected) {
                 _replacements[ID] = selected;
                 
                 [self syncPrefs:YES];

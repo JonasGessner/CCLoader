@@ -36,7 +36,7 @@
     return instance;
 }
 
-- (NSMutableDictionary *)loadNCBundles:(BOOL)names {
+- (NSMutableDictionary *)loadNCBundles:(BOOL)names checkBundles:(BOOL)check {
     NSMutableDictionary *displayNames = (names ? [NSMutableDictionary dictionary] : nil);
     
     if (names) {
@@ -66,9 +66,9 @@
             NSDictionary *iOS7Info = [bundle objectForInfoDictionaryKey:@"SBUIWidgetViewControllers"];
             
             if (iOS7Info.count) {
-                Class principalClass = [bundle classNamed:[iOS7Info.allValues lastObject]];
+                Class principalClass = (check ? [bundle classNamed:[iOS7Info.allValues lastObject]] : Nil);
                 
-                if ([principalClass isSubclassOfClass:[_SBUIWidgetViewController class]]) {
+                if (!check || [principalClass isSubclassOfClass:[_SBUIWidgetViewController class]]) {
                     NSString *ID = bundle.bundleIdentifier;
                     
                     [IDs addObject:ID];
@@ -85,9 +85,9 @@
                 }
             }
             else {
-                Class principalClass = [bundle principalClass];
+                Class principalClass = (check ? [bundle principalClass] : Nil);
                 
-                if ([principalClass conformsToProtocol:@protocol(BBWeeAppController)]) {
+                if (!check || [principalClass conformsToProtocol:@protocol(BBWeeAppController)]) {
                     NSString *ID = bundle.bundleIdentifier;
                     
                     [IDs addObject:ID];
@@ -123,9 +123,9 @@
             NSDictionary *iOS7Info = [bundle objectForInfoDictionaryKey:@"SBUIWidgetViewControllers"];
             
             if (iOS7Info.count) {
-                Class principalClass = [bundle classNamed:[iOS7Info.allValues lastObject]];
+                Class principalClass = (check ? [bundle classNamed:[iOS7Info.allValues lastObject]] : Nil);
                 
-                if ([principalClass isSubclassOfClass:[_SBUIWidgetViewController class]]) {
+                if (!check || [principalClass isSubclassOfClass:[_SBUIWidgetViewController class]]) {
                     NSString *ID = bundle.bundleIdentifier;
                     
                     [IDs addObject:ID];
@@ -142,9 +142,9 @@
                 }
             }
             else {
-                Class principalClass = [bundle principalClass];
+                Class principalClass = (check ? [bundle principalClass] : Nil);
                 
-                if ([principalClass conformsToProtocol:@protocol(BBWeeAppController)]) {
+                if (!check || [principalClass conformsToProtocol:@protocol(BBWeeAppController)]) {
                     NSString *ID = bundle.bundleIdentifier;
                     
                     [IDs addObject:ID];
@@ -186,8 +186,8 @@
     return displayNames;
 }
 
-- (void)loadBundlesAndReplacements:(BOOL)alsoLoadReplacementBundles loadNames:(BOOL)names {
-    NSMutableDictionary *displayNames = [self loadNCBundles:names];
+- (void)loadBundlesAndReplacements:(BOOL)alsoLoadReplacementBundles loadNames:(BOOL)names checkBundles:(BOOL)check {
+    NSMutableDictionary *displayNames = [self loadNCBundles:names checkBundles:NO];
     
     if (names) {
         [displayNames addEntriesFromDictionary:kCCLoaderStockCCDisplayNames];
@@ -211,9 +211,9 @@
             
             NSBundle *bundle = [NSBundle bundleWithPath:path];
             
-            Class principalClass = [bundle principalClass];
+            Class principalClass = (check ? [bundle principalClass] : Nil);
             
-            if ([principalClass conformsToProtocol:@protocol(CCSection)]) {
+            if (!check || [principalClass conformsToProtocol:@protocol(CCSection)]) {
                 NSString *replaceID = [bundle objectForInfoDictionaryKey:kCCLoaderReplaceStockSectionInfoDicationaryKey];
                 
                 if (alsoLoadReplacementBundles && [stockSections containsObject:replaceID]) {

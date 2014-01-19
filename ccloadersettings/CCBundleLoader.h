@@ -27,7 +27,7 @@
 
 + (instancetype)sharedInstance;
 
-- (void)loadBundlesAndReplacements:(BOOL)alsoLoadReplacementBundles loadNames:(BOOL)names;
+- (void)loadBundlesAndReplacements:(BOOL)alsoLoadReplacementBundles loadNames:(BOOL)names checkBundles:(BOOL)check;
 
 - (void)unloadBundles;
 
