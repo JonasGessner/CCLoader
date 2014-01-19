@@ -71,17 +71,19 @@
                 if (!check || [principalClass isSubclassOfClass:[_SBUIWidgetViewController class]]) {
                     NSString *ID = bundle.bundleIdentifier;
                     
-                    [IDs addObject:ID];
-                    
-                    if (names) {
-                        NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+                    if (ID) {
+                        [IDs addObject:ID];
                         
-                        if (displayName && displayNames[ID] == nil) {
-                            displayNames[ID] = displayName;
+                        if (names) {
+                            NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+                            
+                            if (displayName && displayNames[ID] == nil) {
+                                displayNames[ID] = displayName;
+                            }
                         }
+                        
+                        [newBundles addObject:bundle];
                     }
-                    
-                    [newBundles addObject:bundle];
                 }
             }
             else {
@@ -90,17 +92,19 @@
                 if (!check || [principalClass conformsToProtocol:@protocol(BBWeeAppController)]) {
                     NSString *ID = bundle.bundleIdentifier;
                     
-                    [IDs addObject:ID];
-                    
-                    if (names) {
-                        NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+                    if (ID) {
+                        [IDs addObject:ID];
                         
-                        if (displayName && displayNames[ID] == nil) {
-                            displayNames[ID] = displayName;
+                        if (names) {
+                            NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+                            
+                            if (displayName && displayNames[ID] == nil) {
+                                displayNames[ID] = displayName;
+                            }
                         }
+                        
+                        [oldBundles addObject:bundle];
                     }
-                    
-                    [oldBundles addObject:bundle];
                 }
                 else {
                     //You gotta fix that penguin bro!
@@ -128,17 +132,19 @@
                 if (!check || [principalClass isSubclassOfClass:[_SBUIWidgetViewController class]]) {
                     NSString *ID = bundle.bundleIdentifier;
                     
-                    [IDs addObject:ID];
-                    
-                    if (names) {
-                        NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+                    if (ID) {
+                        [IDs addObject:ID];
                         
-                        if (displayName && displayNames[ID] == nil) {
-                            displayNames[ID] = displayName;
+                        if (names) {
+                            NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+                            
+                            if (displayName && displayNames[ID] == nil) {
+                                displayNames[ID] = displayName;
+                            }
                         }
+                        
+                        [newBundles addObject:bundle];
                     }
-                    
-                    [newBundles addObject:bundle];
                 }
             }
             else {
@@ -147,17 +153,19 @@
                 if (!check || [principalClass conformsToProtocol:@protocol(BBWeeAppController)]) {
                     NSString *ID = bundle.bundleIdentifier;
                     
-                    [IDs addObject:ID];
-                    
-                    if (names) {
-                        NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+                    if (ID) {
+                        [IDs addObject:ID];
                         
-                        if (displayName && displayNames[ID] == nil) {
-                            displayNames[ID] = displayName;
+                        if (names) {
+                            NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+                            
+                            if (displayName && displayNames[ID] == nil) {
+                                displayNames[ID] = displayName;
+                            }
                         }
+                        
+                        [oldBundles addObject:bundle];
                     }
-                    
-                    [oldBundles addObject:bundle];
                 }
                 else {
                     //You gotta fix that penguin bro!
@@ -225,32 +233,35 @@
                     
                     NSString *ID = bundle.bundleIdentifier;
                     
-                    if (names) {
-                        NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
-                        
-                        if (displayName && displayNames[ID] == nil) {
-                            displayNames[ID] = displayName;
+                    if (ID) {
+                        if (names) {
+                            NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+                            
+                            if (displayName && displayNames[ID] == nil) {
+                                displayNames[ID] = displayName;
+                            }
                         }
+                        
+                        [replacements addObject:bundle];
+                        
+                        replacingBundles[replaceID] = replacements;
                     }
-                    
-                    [replacements addObject:bundle];
-                    
-                    replacingBundles[replaceID] = replacements;
                 }
                 else {
                     NSString *ID = bundle.bundleIdentifier;
-                    
-                   [bundleIDs addObject:ID];
-                    
-                    if (names) {
-                        NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+                    if (ID) {
+                        [bundleIDs addObject:ID];
                         
-                        if (displayName && displayNames[ID] == nil) {
-                            displayNames[ID] = displayName;
+                        if (names) {
+                            NSString *displayName = [bundle objectForInfoDictionaryKey:@"CFBundleDisplayName"];
+                            
+                            if (displayName && displayNames[ID] == nil) {
+                                displayNames[ID] = displayName;
+                            }
                         }
+                        
+                        [bundles addObject:bundle];
                     }
-                    
-                    [bundles addObject:bundle];
                 }
             }
             
