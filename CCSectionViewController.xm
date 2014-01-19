@@ -1,5 +1,5 @@
 //
-//  CCSectionViewController.x
+//  CCSectionViewController.xm
 //  CCLoader
 //
 //  Created by Jonas Gessner on 04.01.2014.
@@ -9,11 +9,15 @@
 #import "CCSectionViewController.h"
 #import "CCSectionView.h"
 
+#import "ControlCenter/SBControlCenterController.h"
+#import "ControlCenter/SBControlCenterViewController.h"
+
 #import "CCLoaderSettings/SpringBoardUIServices/_SBUIWidgetViewController.h"
 
 #import "CCLoaderSettings/BBWeeAppController-Protocol.h"
 
 #import <objc/runtime.h>
+
 #include <substrate.h>
 
 #define selfView ((CCSectionView *)self.view)
@@ -111,21 +115,26 @@
 
 %new
 - (void)invalidatePreferredViewSize {
-    
+    [self.delegate noteSectionEnabledStateDidChange:self];
 }
 
 %new
-- (void)requestLaunchOfURL:(NSURL *)arg1 {
-    
+- (void)requestLaunchOfURL:(NSURL *)url {
+    [[UIApplication sharedApplication] openURL:url];
 }
 
 %new
 - (void)requestPresentationOfViewController:(NSString *)arg1 presentationStyle:(long long)arg2 context:(NSDictionary *)arg3 completion:(void (^)(void))arg4 {
-    
+    //??
 }
 
 
 #pragma mark - CCSectionDelegate
+
+%new
+- (void)showViewController:(UIViewController *)vc animated:(BOOL)animated completion:(void (^)(void))completion {
+    [MSHookIvar<UIViewController *>([%c(SBControlCenterController) sharedInstance], "_viewController") presentViewController:vc animated:animated completion:completion];
+}
 
 %new
 - (void)updateStatusText:(NSString *)text {

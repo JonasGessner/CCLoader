@@ -6,6 +6,8 @@
 - (void)updateStatusText:(NSString *)text;
 - (void)requestControlCenterDismissal;
 
+- (void)showViewController:(UIViewController *)vc animated:(BOOL)animated completion:(void (^)(void))completion;
+
 @end
 
 @protocol CCSection <NSObject>
