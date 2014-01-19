@@ -397,14 +397,22 @@ NS_INLINE void reloadCCSections(void) {
         
         CGRect frame = view.frame;
         
-        if (landscape && [view isKindOfClass:%c(SBCCButtonLayoutView)]) {
+        BOOL landscapeSideSection = (landscape && (index == 0 || index == sections.count-1));
+        
+        
+        if (landscapeSideSection) {
             frame.size.height = fakeHeight;
         }
         else {
             frame.origin.y -= kCCGrabberHeight;
+            
+            if (view.superview != scroller()) {
+                [scroller() addSubview:view];
+            }
         }
         
         view.frame = frame;
+        
         
         UIView *separator = [self _separatorAtIndex:index];
         
@@ -414,6 +422,10 @@ NS_INLINE void reloadCCSections(void) {
             separatorFrame.origin.y -= kCCGrabberHeight;
             
             separator.frame = separatorFrame;
+            
+            if (separator.superview != scroller()) {
+                [scroller() addSubview:separator];
+            }
         }
         
         index++;
@@ -452,27 +464,29 @@ NS_INLINE void reloadCCSections(void) {
 }
 */
 
-- (void)addSubview:(UIView *)subview {
-    if ([subview isKindOfClass:%c(SBControlCenterSectionView)]) {
-        if (landscape) {
-            if (![subview isKindOfClass:%c(SBCCButtonLayoutView)]) {
-                [scroller() addSubview:subview];
+/*- (void)addSubview:(UIView *)subview {
+    if (subview != _scroller && ![subview isKindOfClass:%c(SBControlCenterGrabberView)]) {
+        if ([subview isKindOfClass:%c(SBControlCenterSectionView)]) {
+            if (landscape) {
+                if (![subview isKindOfClass:%c(SBCCButtonLayoutView)]) {
+                    [scroller() addSubview:subview];
+                }
+                else {
+                    %orig;
+                }
             }
             else {
-                %orig;
+                [scroller() addSubview:subview];
             }
         }
         else {
             [scroller() addSubview:subview];
         }
     }
-    else if ([subview isKindOfClass:%c(SBControlCenterSeparatorView)]) {
-        [scroller() addSubview:subview];
-    }
     else {
         %orig;
     }
-}
+}*/
 
 - (void)setFrame:(CGRect)frame {
     frame.size.height = realHeight;
@@ -613,22 +627,23 @@ NS_INLINE void reloadCCSections(void) {
 
 - (void)controlCenterWillBeginTransition {
     if (visible) {
-        visible = NO;
+//        visible = NO;
         [[NSNotificationCenter defaultCenter] postNotificationName:@"CCWillDisappearNotification" object:nil];
     }
 }
 
 - (void)controlCenterWillFinishTransitionOpen:(BOOL)open withDuration:(NSTimeInterval)duration {
+    %orig;
+    
     if (open && !visible) {
         visible = YES;
         
         dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(duration * NSEC_PER_SEC));
+        
         dispatch_after(popTime, dispatch_get_main_queue(), ^ {
             [[NSNotificationCenter defaultCenter] postNotificationName:@"CCDidAppearNotification" object:nil];
         });
     }
-
-    %orig;
 }
 
 - (void)controlCenterWillPresent {
@@ -656,6 +671,8 @@ NS_INLINE void reloadCCSections(void) {
     }
     
     [scroller() removeFromSuperview];
+    
+    scroller().contentOffset = CGPointZero;
     
     realHeight = 0.0f;
     fakeHeight = 0.0f;
