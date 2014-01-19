@@ -165,7 +165,7 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
             CCSectionViewController *sectionViewController = customSectionViewControllers[sectionIdentifier];
             
             if (!sectionViewController) {
-                sectionViewController = [[%c(CCSectionViewController) alloc] initWithBundle:loadingBundle type:type];
+                sectionViewController = [[%c(CCSectionViewController) alloc] initWithCCLoaderBundle:loadingBundle type:type];
                 [sectionViewController setDelegate:viewController];
                 
                 customSectionViewControllers[sectionIdentifier] = sectionViewController;
@@ -214,7 +214,7 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
                 if (replacingBundle) {
                     CCSectionViewController *section = loadCustomSection(replacingID, replacingBundle, CCBundleTypeDefault);
                     
-                    [section setReplacingSectionViewController:stockSectionViewControllerForID(contentView, sectionID)];
+                    [section _CCLoader_setReplacingSectionViewController:stockSectionViewControllerForID(contentView, sectionID)];
                 }
                 else {
                     [_sectionViewControllers addObject:stockSectionViewControllerForID(contentView, sectionID)];

@@ -24,17 +24,14 @@ typedef NS_ENUM(NSUInteger, CCBundleType) {
 
 @interface CCSectionViewController : SBControlCenterSectionViewController <CCSectionDelegate, _SBUIWidgetHost>
 
-- (id)initWithBundle:(NSBundle *)bundle type:(CCBundleType)type;
+- (id)initWithCCLoaderBundle:(NSBundle *)bundle type:(CCBundleType)type;
 
-- (void)setReplacingSectionViewController:(SBControlCenterSectionViewController *)controller;
-- (SBControlCenterSectionViewController *)replacingSectionViewController;
+- (void)_CCLoader_setReplacingSectionViewController:(SBControlCenterSectionViewController *)controller;
+- (SBControlCenterSectionViewController *)_CCLoader_replacingSectionViewController;
 
-- (NSString *)sectionName;
-- (NSString *)sectionIdentifier;
-
-- (NSBundle *)bundle;
+- (NSBundle *)_CCLoader_bundle;
 
 //Unused when replacing a stock section
-- (CGFloat)height;
+- (CGFloat)_CCLoader_height;
 
 @end

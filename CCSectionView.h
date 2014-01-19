@@ -13,8 +13,8 @@
 
 @interface CCSectionView : SBControlCenterSectionView
 
-- (void)setContentView:(UIView *)view;
+- (void)_CCLoader_setContentView:(UIView *)view;
 
-- (UIView *)contentView;
+- (UIView *)_CCLoader_contentView;
 
 @end

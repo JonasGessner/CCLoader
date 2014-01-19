@@ -11,23 +11,17 @@
 #import <objc/runtime.h>
 #include <substrate.h>
 
-@interface CCSectionView ()
-
-- (void)setContentView:(UIView *)view;
-
-@end
-
 %subclass CCSectionView : SBControlCenterSectionView
 
 - (void)dealloc {
     %orig;
     
-    [self setContentView:nil];
+    [self _CCLoader_setContentView:nil];
 }
 
 %new
-- (void)setContentView:(UIView *)view {
-    [self.contentView removeFromSuperview];
+- (void)_CCLoader_setContentView:(UIView *)view {
+    [self._CCLoader_contentView removeFromSuperview];
     
     if (view) {
         [self addSubview:view];
@@ -37,14 +31,14 @@
 }
 
 %new
-- (UIView *)contentView {
+- (UIView *)_CCLoader_contentView {
     return objc_getAssociatedObject(self, @selector(contentView));
 }
 
 - (void)layoutSubviews {
     %orig;
     
-    self.contentView.frame = self.bounds;
+    self._CCLoader_contentView.frame = self.bounds;
 }
 
 %end
