@@ -654,7 +654,7 @@ NS_INLINE void reloadCCSections(void) {
         NSMutableArray *disabledSections = [prefs[@"DisabledSections"] mutableCopy];
         
         if (!disabledSections) {
-            disabledSections = [NSMutableArray array];
+            disabledSections = [[NSMutableArray alloc] init];
         }
         
         NSMutableOrderedSet *allIDs = [NSMutableOrderedSet orderedSetWithSet:loader.bundleIDs];
