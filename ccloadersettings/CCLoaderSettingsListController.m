@@ -74,7 +74,7 @@
 }
 
 - (void)infoPressed:(UIButton *)__unused sender {
-    UIActionSheet *sheet = [[UIActionSheet alloc] initWithTitle:@"CCLoader by Jonas Gessner" delegate:self cancelButtonTitle:@"Cancel" destructiveButtonTitle:nil otherButtonTitles:@"Donate", @"Twitter", @"More Apps & Tweaks", @"Source Code", nil];
+    UIActionSheet *sheet = [[UIActionSheet alloc] initWithTitle:@"CCLoader by Jonas Gessner" delegate:self cancelButtonTitle:@"Cancel" destructiveButtonTitle:nil otherButtonTitles:@"Donate", @"Twitter", @"More Apps & Tweaks", @"API Info & Source Code", nil];
     
     [sheet showFromBarButtonItem:self.navigationItem.rightBarButtonItem animated:YES];
 }
