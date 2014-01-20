@@ -454,8 +454,10 @@ NS_INLINE void reloadCCSections(void) {
         
         
         
+        if (!landscapeSideSection) {
+            previous = viewController;
+        }
         
-        previous = viewController;
         index++;
     }
 }
@@ -619,6 +621,8 @@ NS_INLINE void reloadCCSections(void) {
 //        visible = NO;
         [[NSNotificationCenter defaultCenter] postNotificationName:@"CCLoaderCCWillDisappearNotification" object:nil];
     }
+    
+    %orig;
 }
 
 - (void)controlCenterDidFinishTransition {
@@ -659,7 +663,7 @@ NS_INLINE void reloadCCSections(void) {
         [contentView _removeSectionController:contentView.quickLaunchSection];
     }
     
-    [scroller() removeFromSuperview];
+//    [scroller() removeFromSuperview];
     
     scroller().contentOffset = CGPointZero;
     
