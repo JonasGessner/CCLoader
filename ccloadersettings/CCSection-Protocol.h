@@ -5,7 +5,7 @@
 
 - (void)updateStatusText:(NSString *)text;
 - (void)requestControlCenterDismissal;
-
+- (void)sectionHeightChanged;
 - (void)showViewController:(UIViewController *)vc animated:(BOOL)animated completion:(void (^)(void))completion;
 
 @end

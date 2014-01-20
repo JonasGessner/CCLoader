@@ -35,6 +35,7 @@
 #define iPad (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
 
 #define kCCGrabberHeight 25.0f
+#define kCCSeparatorHeight 1.5f
 
 static NSMutableDictionary *customSectionViewControllers = nil;
 
@@ -377,7 +378,8 @@ NS_INLINE void reloadCCSections(void) {
 }
 
 
-
+#define TIME_MEASURE_START(i) CFTimeInterval start##i = CFAbsoluteTimeGetCurrent()
+#define TIME_MEASURE_END(i) NSLog(@"ELAPSED TIME (%i) %f", i, CFAbsoluteTimeGetCurrent()-start##i)
 
 #pragma mark - Swizzles
 
@@ -386,13 +388,35 @@ NS_INLINE void reloadCCSections(void) {
 %hook SBControlCenterContentView
 
 - (void)layoutSubviews {
+    if (scroller().superview != self) {
+        [self addSubview:scroller()];
+    }
+    
+    
+    CGRect frame = self.bounds;
+    
+    frame.origin.y = kCCGrabberHeight;
+    frame.size.height = fakeHeight-kCCGrabberHeight;
+    scroller().frame = frame;
+    
+    frame.size.height = realHeight-kCCGrabberHeight;
+    scroller().contentSize = frame.size;
+    
+    
+    
     %orig;
+    
+    
     
     NSUInteger index = 0;
     
-    NSArray *sections = self._allSections.copy;
+    NSArray *sections = self._allSections;
     
-    for (UIViewController *viewController in sections) {
+    UIViewController *previous = nil;
+    
+    while (index < sections.count) {
+        UIViewController *viewController = sections[index];
+        
         UIView *view = viewController.view;
         
         CGRect frame = view.frame;
@@ -404,9 +428,9 @@ NS_INLINE void reloadCCSections(void) {
             frame.size.height = fakeHeight;
         }
         else {
-            frame.origin.y -= kCCGrabberHeight;
+            frame.origin.y = CGRectGetMaxY(previous.view.frame)+kCCSeparatorHeight;
             
-            if (view.superview != scroller()) {
+            if (view.superview && view.superview != scroller()) {
                 [scroller() addSubview:view];
             }
         }
@@ -423,70 +447,26 @@ NS_INLINE void reloadCCSections(void) {
             
             separator.frame = separatorFrame;
             
-            if (separator.superview != scroller()) {
+            if (separator.superview && separator.superview != scroller()) {
                 [scroller() addSubview:separator];
             }
         }
         
+        
+        
+        
+        previous = viewController;
         index++;
     }
-    
-    [sections release];
-    
-    if (scroller().superview != self) {
-        [self addSubview:scroller()];
-    }
-    
-    CGRect frame = self.bounds;
-    
-    frame.origin.y = kCCGrabberHeight;
-    frame.size.height = fakeHeight-kCCGrabberHeight;
-    scroller().frame = frame;
-    
-    frame.size.height = realHeight-kCCGrabberHeight;
-    scroller().contentSize = frame.size;
 }
 
 - (void)_removeSectionController:(SBControlCenterSectionViewController *)controller {
     %orig;
     
+    [controller willMoveToParentViewController:nil];
     [controller.view removeFromSuperview];
+    [controller removeFromParentViewController];
 }
-
-/*
-- (NSArray *)subviews {
-    NSMutableArray *subviews = %orig.mutableCopy;
-
-    [subviews removeObjectIdenticalTo:scroller()];
-    [subviews addObjectsFromArray:scroller().subviews];
-
-    return subviews.copy;
-}
-*/
-
-/*- (void)addSubview:(UIView *)subview {
-    if (subview != _scroller && ![subview isKindOfClass:%c(SBControlCenterGrabberView)]) {
-        if ([subview isKindOfClass:%c(SBControlCenterSectionView)]) {
-            if (landscape) {
-                if (![subview isKindOfClass:%c(SBCCButtonLayoutView)]) {
-                    [scroller() addSubview:subview];
-                }
-                else {
-                    %orig;
-                }
-            }
-            else {
-                [scroller() addSubview:subview];
-            }
-        }
-        else {
-            [scroller() addSubview:subview];
-        }
-    }
-    else {
-        %orig;
-    }
-}*/
 
 - (void)setFrame:(CGRect)frame {
     frame.size.height = realHeight;
@@ -527,16 +507,6 @@ NS_INLINE void reloadCCSections(void) {
         SBControlCenterViewController *viewController = MSHookIvar<SBControlCenterViewController *>(controller, "_viewController");
         
         SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(viewController, "_contentView");
-        
-//        CCBundleLoader *loader = [CCBundleLoader sharedInstance];
-//        
-//        NSDictionary *replacingBundles = loader.replacingBundles;
-//        
-//        for (NSString *key in replacingBundles) {
-//            [stockSectionViewControllerForID(contentView, key) release];
-//            
-//            setStockSectionViewControllerForID(contentView, key, nil);
-//        }
         
         loadCCSections(viewController, contentView);
     }
@@ -598,7 +568,7 @@ NS_INLINE void reloadCCSections(void) {
             for (NSUInteger i = 1; i < search.count-1; i++) {
                 SBControlCenterSectionViewController *controller = search[i];
                 
-                realHeight += [controller contentSizeForOrientation:orientation].height+(i == 1 ? 1.5f : 0.0f);
+                realHeight += [controller contentSizeForOrientation:orientation].height+(i == 1 ? kCCSeparatorHeight : 0.0f);
             }
             
             fakeHeight = height;
@@ -620,34 +590,53 @@ NS_INLINE void reloadCCSections(void) {
         }
         
         contentHeight = height;
+        
+        contentHeightIsSet = YES;
     }
     
     return contentHeight;
 }
 
+%new
+- (void)_CCLoader_reloadContentHeight {
+    SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(self, "_contentView");
+    
+    [contentView setNeedsLayout];
+    [contentView layoutIfNeeded];
+    
+    contentHeightIsSet = NO;
+    [self _updateContentFrame];
+    
+    [UIView animateWithDuration:0.2 delay:0.0 options:(UIViewAnimationOptionCurveEaseInOut | UIViewAnimationOptionBeginFromCurrentState) animations:^{
+        [contentView setNeedsLayout];
+        [contentView layoutIfNeeded];
+        [contentView updateEnabledSections];
+    } completion:nil];
+}
+
 - (void)controlCenterWillBeginTransition {
     if (visible) {
 //        visible = NO;
-        [[NSNotificationCenter defaultCenter] postNotificationName:@"CCWillDisappearNotification" object:nil];
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"CCLoaderCCWillDisappearNotification" object:nil];
     }
 }
 
-- (void)controlCenterWillFinishTransitionOpen:(BOOL)open withDuration:(NSTimeInterval)duration {
+- (void)controlCenterDidFinishTransition {
     %orig;
+    
+    BOOL open = self.presented;
     
     if (open && !visible) {
         visible = YES;
         
-        dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(duration * NSEC_PER_SEC));
-        
-        dispatch_after(popTime, dispatch_get_main_queue(), ^ {
-            [[NSNotificationCenter defaultCenter] postNotificationName:@"CCDidAppearNotification" object:nil];
-        });
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"CCLoaderCCDidAppearNotification" object:nil];
     }
 }
 
 - (void)controlCenterWillPresent {
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"CCWillAppearNotification" object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_CCLoader_reloadContentHeight) name:@"CCLoaderReloadControlCenterHeight" object:nil];
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"CCLoaderCCWillAppearNotification" object:nil];
     
     hideMediaControlsInCurrentSession = (strippedSectionViewControllers && ![[%c(SBMediaController) sharedInstance] nowPlayingApplication]);
     
@@ -679,7 +668,9 @@ NS_INLINE void reloadCCSections(void) {
     
     landscape = NO;
     
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"CCDidDisappearNotification" object:nil];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"CCLoaderCCDidDisappearNotification" object:nil];
+    
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCLoaderReloadControlCenterHeight" object:nil];
     
     contentHeightIsSet = NO;
     

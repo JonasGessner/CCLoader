@@ -20,6 +20,14 @@
 
 #include <substrate.h>
 
+
+@interface EKCalendarWidgetViewController : _SBUIWidgetViewController
+
+- (void)_refreshDayView;
+
+@end
+
+
 #define iPad (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
 
 #define selfView ((CCSectionView *)self.view)
@@ -47,14 +55,14 @@
     if (self) {
         objc_setAssociatedObject(self, @selector(bundleType), @(type), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_CCLoader_controlCenterWillAppear) name:@"CCWillAppearNotification" object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_CCLoader_controlCenterWillAppear) name:@"CCLoaderCCWillAppearNotification" object:nil];
         
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_CCLoader_controlCenterDidAppear) name:@"CCDidAppearNotification" object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_CCLoader_controlCenterDidAppear) name:@"CCLoaderCCDidAppearNotification" object:nil];
         
         
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_CCLoader_controlCenterWillDisappear) name:@"CCWillDisappearNotification" object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_CCLoader_controlCenterWillDisappear) name:@"CCLoaderCCWillDisappearNotification" object:nil];
         
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_CCLoader_controlCenterDidDisappear) name:@"CCDidDisappearNotification" object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_CCLoader_controlCenterDidDisappear) name:@"CCLoaderCCDidDisappearNotification" object:nil];
         
         [self _CCLoader_setBundle:bundle];
         
@@ -88,20 +96,11 @@
 - (void)dealloc {
     %orig;
     
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCWillAppearNotification" object:nil];
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCDidAppearNotification" object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCLoaderCCWillAppearNotification" object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCLoaderCCDidAppearNotification" object:nil];
     
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCWillDisappearNotification" object:nil];
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCDidDisappearNotification" object:nil];
-    
-    if (selfBundleType == CCBundleTypeWeeApp) {
-        [selfSection willMoveToParentViewController:nil];
-        [selfView _CCLoader_setContentView:nil];
-        [selfSection removeFromParentViewController];
-    }
-    else {
-        [selfView _CCLoader_setContentView:nil];
-    }
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCLoaderCCWillDisappearNotification" object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCLoaderCCDidDisappearNotification" object:nil];
     
     [selfSection setWidgetHost:nil];
     
@@ -121,7 +120,7 @@
 
 %new
 - (void)invalidatePreferredViewSize {
-    [self.delegate noteSectionEnabledStateDidChange:self];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"CCLoaderReloadControlCenterHeight" object:nil];
 }
 
 %new
@@ -130,7 +129,8 @@
 }
 
 %new
-- (void)requestPresentationOfViewController:(NSString *)arg1 presentationStyle:(long long)arg2 context:(NSDictionary *)arg3 completion:(void (^)(void))arg4 {
+- (void)requestPresentationOfViewController:(UIViewController *)arg1 presentationStyle:(long long)arg2 context:(NSDictionary *)arg3 completion:(void (^)(void))arg4 {
+//    NSLog(@"\n\n\n\n\n!!!!!!!!!%@ %lli %@!!!!!!!!!!!\n\n\n\n\n\n\n", arg1, arg2, arg3);
     //??
 }
 
@@ -138,17 +138,17 @@
 #pragma mark - CCSectionDelegate
 
 %new
-- (void)_CCLoader_showViewController:(UIViewController *)vc animated:(BOOL)animated completion:(void (^)(void))completion {
+- (void)showViewController:(UIViewController *)vc animated:(BOOL)animated completion:(void (^)(void))completion {
     [MSHookIvar<UIViewController *>([%c(SBControlCenterController) sharedInstance], "_viewController") presentViewController:vc animated:animated completion:completion];
 }
 
 %new
-- (void)_CCLoader_updateStatusText:(NSString *)text {
+- (void)updateStatusText:(NSString *)text {
     [self.delegate section:self updateStatusText:text reason:@"de.j-gessner.ccloader.updatestatustext"];
 }
 
 %new
-- (void)_CCLoader_requestControlCenterDismissal {
+- (void)requestControlCenterDismissal {
     if (!self.view.superview) {
         NSLog(@"[CCLoader] ERROR: %@ was called too early", NSStringFromSelector(_cmd));
     }
@@ -156,6 +156,13 @@
         [self.delegate sectionWantsControlCenterDismissal:self];
     }
 }
+
+%new
+- (void)sectionHeightChanged {
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"CCLoaderReloadControlCenterHeight" object:nil];
+}
+
+#pragma mark -
 
 %new
 - (CCBundleType)_CCLoader_bundleType {
@@ -256,12 +263,18 @@
     }
     else if (selfBundleType == CCBundleTypeWeeApp) {
         [selfSection hostDidPresent];
+        
+        //For some reason this needs to be here or the Calendar Widget won't be displayed correctly after the first dismissal o.O
+        if ([selfSection isKindOfClass:%c(EKCalendarWidgetViewController)]) {
+            [(EKCalendarWidgetViewController *)selfSection _refreshDayView];
+        }
     }
 }
 
 
 %new
 - (void)_CCLoader_controlCenterWillDisappear {
+    
 }
 
 

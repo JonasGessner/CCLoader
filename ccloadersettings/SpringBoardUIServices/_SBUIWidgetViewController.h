@@ -33,6 +33,7 @@
 - (void)__setWidgetIdiom:(long long)arg1;
 - (void)__setWidgetIdentifier:(id)arg1;
 - (void)__requestPreferredViewSizeWithReplyHandler:(id)arg1;
+
 - (void)invalidatePreferredViewSize;
 - (void)requestLaunchOfURL:(id)arg1;
 - (void)requestPresentationOfViewController:(id)arg1 presentationStyle:(long long)arg2 context:(id)arg3 completion:(id)arg4;
