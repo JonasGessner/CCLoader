@@ -27,6 +27,12 @@
 
 @end
 
+@interface StocksWeeAppController : _SBUIWidgetViewController
+
+- (void)unloadView;
+
+@end
+
 
 #define iPad (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
 
@@ -44,6 +50,8 @@
 - (_SBUIWidgetViewController <CCSection, BBWeeAppController> *)_CCLoader_section;
 
 - (CCBundleType)_CCLoader_bundleType;
+
+- (void)showViewController:(UIViewController *)vc animated:(BOOL)animated modalPresentationStyle:(UIModalPresentationStyle)style completion:(void (^)(void))completion;
 
 @end
 
@@ -116,6 +124,15 @@
     [self _CCLoader_setReplacingSectionViewController:nil];
 }
 
+%new
+- (void)showViewController:(UIViewController *)vc animated:(BOOL)animated modalPresentationStyle:(UIModalPresentationStyle)style completion:(void (^)(void))completion {
+    UIViewController *viewController = MSHookIvar<UIViewController *>([%c(SBControlCenterController) sharedInstance], "_viewController");
+    
+    [viewController setModalPresentationStyle:style];
+    
+    [viewController presentViewController:vc animated:animated completion:completion];
+}
+
 #pragma mark - _SBUIWidgetHost
 
 %new
@@ -129,9 +146,8 @@
 }
 
 %new
-- (void)requestPresentationOfViewController:(UIViewController *)arg1 presentationStyle:(long long)arg2 context:(NSDictionary *)arg3 completion:(void (^)(void))arg4 {
-//    NSLog(@"\n\n\n\n\n!!!!!!!!!%@ %lli %@!!!!!!!!!!!\n\n\n\n\n\n\n", arg1, arg2, arg3);
-    //??
+- (void)requestPresentationOfViewController:(UIViewController *)present presentationStyle:(UIModalPresentationStyle)presentationStyle context:(NSDictionary *)info completion:(void (^)(void))completion {
+    [self showViewController:present animated:YES modalPresentationStyle:presentationStyle completion:completion];
 }
 
 
@@ -139,7 +155,7 @@
 
 %new
 - (void)showViewController:(UIViewController *)vc animated:(BOOL)animated completion:(void (^)(void))completion {
-    [MSHookIvar<UIViewController *>([%c(SBControlCenterController) sharedInstance], "_viewController") presentViewController:vc animated:animated completion:completion];
+    [self showViewController:vc animated:animated modalPresentationStyle:UIModalPresentationFullScreen completion:completion];
 }
 
 %new
@@ -218,7 +234,7 @@
 
 %new
 - (void)_CCLoader_controlCenterWillAppear {
-    if (selfBundleType && CCBundleTypeDefault && [selfSection respondsToSelector:@selector(controlCenterWillAppear)]) {
+    if (selfBundleType == CCBundleTypeDefault && [selfSection respondsToSelector:@selector(controlCenterWillAppear)]) {
         [selfSection controlCenterWillAppear];
     }
     else if (selfBundleType == CCBundleTypeBBWeeApp) {
@@ -280,7 +296,7 @@
 
 %new
 - (void)_CCLoader_controlCenterDidDisappear {
-    if (selfBundleType && CCBundleTypeDefault && [selfSection respondsToSelector:@selector(controlCenterDidDisappear)]) {
+    if (selfBundleType == CCBundleTypeDefault && [selfSection respondsToSelector:@selector(controlCenterDidDisappear)]) {
         [selfSection controlCenterDidDisappear];
     }
     else if (selfBundleType == CCBundleTypeBBWeeApp) {
@@ -300,7 +316,17 @@
     else if (selfBundleType == CCBundleTypeWeeApp) {
         [selfSection hostWillDismiss];
         
+        BOOL stocksWeeApp = ([selfSection isKindOfClass:%c(StocksWeeAppController)]);
+        
+        if (stocksWeeApp) {
+            [selfSection setWidgetHost:nil];
+        }
+        
         [selfSection hostDidDismiss];
+        
+        if (stocksWeeApp) {
+            [selfSection setWidgetHost:self];
+        }
     }
 }
 
@@ -321,7 +347,7 @@
             return [selfSection viewHeight];
         }
         else {
-            return 80.0f; //What?
+            return 80.0f;
         }
     }
     else if (selfBundleType == CCBundleTypeWeeApp) {

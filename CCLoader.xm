@@ -39,16 +39,14 @@
 
 static NSMutableDictionary *customSectionViewControllers = nil;
 
-static NSMutableArray *sectionViewControllers = nil;
-static NSMutableArray *strippedSectionViewControllers = nil;
-
-static NSMutableArray *landscapeSectionViewControllers = nil;
-static NSMutableArray *landscapeStrippedSectionViewControllers = nil;
-
+static NSArray *sectionViewControllers = nil;
+static NSArray *landscapeSectionViewControllers = nil;
 
 static BOOL hideMediaControlsInCurrentSession = NO;
 
-static BOOL landscape = NO;
+static UIInterfaceOrientation currentOrientation = UIInterfaceOrientationPortrait;
+
+#define kCCIsInLandscape UIInterfaceOrientationIsLandscape(currentOrientation)
 
 static BOOL contentHeightIsSet = NO;
 static CGFloat contentHeight = 0.0f;
@@ -58,6 +56,8 @@ static BOOL loadedSections = NO;
 static CGFloat realHeight = 0.0f;
 static CGFloat fakeHeight = 0.0f;
 
+static BOOL hideMediaControlsIfStopped = NO;
+static BOOL hideSeparators = NO;
 static BOOL visible = NO;
 
 static CCScrollView *_scroller = nil;
@@ -135,7 +135,7 @@ NS_INLINE BOOL checkBundleForType(NSBundle *bundle, CCBundleType type) {
     return NO;
 }
 
-NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionary *replacements, SBControlCenterViewController *viewController, SBControlCenterContentView *contentView, NSUInteger *mediaControlsIndex, BOOL cleanUnusedSections) {
+NS_INLINE NSArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionary *replacements, SBControlCenterViewController *viewController, SBControlCenterContentView *contentView, NSUInteger *mediaControlsIndex, BOOL cleanUnusedSections) {
     CCBundleLoader *loader = [CCBundleLoader sharedInstance];
     
     NSMutableArray *_sectionViewControllers = [[NSMutableArray alloc] initWithCapacity:IDs.count];
@@ -270,7 +270,11 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
         customSectionViewControllers = nil;
     }
     
-    return _sectionViewControllers;
+    NSArray *final = _sectionViewControllers.copy;
+    
+    [_sectionViewControllers release];
+    
+    return final;
 }
 
 NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBControlCenterContentView *contentView) {
@@ -295,12 +299,8 @@ NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBC
     [landscapeSectionsToLoad insertObject:@"com.apple.controlcenter.settings" atIndex:0];
     [landscapeSectionsToLoad insertObject:@"com.apple.controlcenter.quick-launch" atIndex:landscapeSectionsToLoad.count];
     
-    BOOL hideMediaControlsIfStopped = [prefs[@"HideMediaControls"] boolValue];
-    BOOL hideSeparators = [prefs[@"HideSeparators"] boolValue];
-    
-    
-    NSUInteger mediaControlsIndex = NSNotFound;
-    NSUInteger landscapeMediaControlsIndex = NSNotFound;
+    hideMediaControlsIfStopped = [prefs[@"HideMediaControls"] boolValue];
+    hideSeparators = [prefs[@"HideSeparators"] boolValue];
     
     //Remove current section view controllers
     for (SBControlCenterSectionViewController *sectionViewController in landscapeSectionViewControllers) {
@@ -310,59 +310,12 @@ NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBC
     [sectionViewControllers release];
     sectionViewControllers = nil;
     
-    [landscapeStrippedSectionViewControllers release];
-    landscapeStrippedSectionViewControllers = nil;
+    [landscapeSectionViewControllers release];
+    landscapeSectionViewControllers = nil;
     
-    sectionViewControllers = sectionViewControllersForIDs(sectionsToLoad, replacements, viewController, contentView, &mediaControlsIndex, NO);
+    sectionViewControllers = sectionViewControllersForIDs(sectionsToLoad, replacements, viewController, contentView, 0, NO);
     
-    landscapeSectionViewControllers = sectionViewControllersForIDs(landscapeSectionsToLoad.array, replacements, viewController, contentView, &landscapeMediaControlsIndex, YES);
-    
-    
-    [landscapeStrippedSectionViewControllers release];
-    landscapeStrippedSectionViewControllers = nil;
-    
-    [strippedSectionViewControllers release];
-    strippedSectionViewControllers = nil;
-    
-    if (hideMediaControlsIfStopped) {
-        if (mediaControlsIndex != NSNotFound) {
-            strippedSectionViewControllers = sectionViewControllers.mutableCopy;
-            [strippedSectionViewControllers removeObjectAtIndex:mediaControlsIndex];
-        }
-        
-        if (landscapeMediaControlsIndex != NSNotFound) {
-            landscapeStrippedSectionViewControllers = landscapeSectionViewControllers.mutableCopy;
-            [landscapeStrippedSectionViewControllers removeObjectAtIndex:landscapeMediaControlsIndex];
-        }
-    }
-    
-    NSMutableArray *separators = MSHookIvar<NSMutableArray *>(contentView, "_dividerViews");
-    
-    NSUInteger expectedCount = landscapeSectionViewControllers.count;
-    
-    if (expectedCount > 1 && !hideSeparators) {
-        while (separators.count > expectedCount-1) {
-            SBControlCenterSeparatorView *separator = [separators lastObject];
-            
-            [separator removeFromSuperview];
-            [separators removeLastObject];
-        }
-        
-        while (separators.count < expectedCount-1) {
-            SBControlCenterSeparatorView *separator = [[%c(SBControlCenterSeparatorView) alloc] initWithFrame:CGRectZero];
-            
-            [contentView addSubview:separator];
-            
-            [separators addObject:separator];
-        }
-    }
-    else {
-        for (SBControlCenterSeparatorView *separator in separators) {
-            [separator removeFromSuperview];
-        }
-        
-        [separators removeAllObjects];
-    }
+    landscapeSectionViewControllers = sectionViewControllersForIDs(landscapeSectionsToLoad.array, replacements, viewController, contentView, 0, YES);
 }
 
 NS_INLINE void reloadCCSections(void) {
@@ -414,48 +367,50 @@ NS_INLINE void reloadCCSections(void) {
     
     UIViewController *previous = nil;
     
+    BOOL landscape = kCCIsInLandscape;
+    
     while (index < sections.count) {
-        UIViewController *viewController = sections[index];
+        SBControlCenterSectionViewController *viewController = sections[index];
         
         UIView *view = viewController.view;
         
-        CGRect frame = view.frame;
-        
-        BOOL landscapeSideSection = (landscape && (index == 0 || index == sections.count-1));
-        
-        
-        if (landscapeSideSection) {
-            frame.size.height = fakeHeight;
-        }
-        else {
-            frame.origin.y = CGRectGetMaxY(previous.view.frame)+kCCSeparatorHeight;
+        if (view.superview && [viewController enabledForOrientation:currentOrientation]) {
+            CGRect frame = view.frame;
             
-            if (view.superview && view.superview != scroller()) {
-                [scroller() addSubview:view];
+            BOOL landscapeSideSection = (kCCIsInLandscape && (index == 0 || index == sections.count-1));
+            
+            if (landscapeSideSection) {
+                frame.size.height = fakeHeight;
             }
-        }
-        
-        view.frame = frame;
-        
-        
-        UIView *separator = [self _separatorAtIndex:index];
-        
-        if (separator) {
-            CGRect separatorFrame = separator.frame;
-            
-            separatorFrame.origin.y -= kCCGrabberHeight;
-            
-            separator.frame = separatorFrame;
-            
-            if (separator.superview && separator.superview != scroller()) {
-                [scroller() addSubview:separator];
+            else {
+                if (view.superview != scroller()) {
+                    [scroller() addSubview:view];
+                }
+                
+                frame.origin.y = CGRectGetMaxY(previous.view.frame)+kCCSeparatorHeight;
+                frame.size.height = [viewController contentSizeForOrientation:currentOrientation].height;
             }
-        }
-        
-        
-        
-        if (!landscapeSideSection) {
-            previous = viewController;
+            
+            view.frame = frame;
+            
+            
+            UIView *separator = [self _separatorAtIndex:index-landscape];
+            
+            if (separator) {
+                if (separator.superview != scroller()) {
+                    [scroller() addSubview:separator];
+                }
+                
+                CGRect separatorFrame = separator.frame;
+                
+                separatorFrame.origin.y = CGRectGetMaxY(view.frame);
+                
+                separator.frame = separatorFrame;
+            }
+            
+            if (!landscapeSideSection) {
+                previous = viewController;
+            }
         }
         
         index++;
@@ -477,22 +432,66 @@ NS_INLINE void reloadCCSections(void) {
 }
 
 - (NSMutableArray *)_allSections {
-    if (landscape) {
-        if (hideMediaControlsInCurrentSession) {
-            return landscapeStrippedSectionViewControllers;
+    NSMutableArray *toBeReturned = nil;
+    
+    if (kCCIsInLandscape) {
+        toBeReturned = landscapeSectionViewControllers.mutableCopy;
+    }
+    else {
+        toBeReturned = sectionViewControllers.mutableCopy;
+    }
+    
+    NSUInteger possibleIndexForSeparatorRemoval = 0;
+    
+    NSUInteger i = 0;
+    
+    while (i < toBeReturned.count) {
+        SBControlCenterSectionViewController *vc = toBeReturned[i];
+        
+        if (![vc enabledForOrientation:currentOrientation]) {
+            possibleIndexForSeparatorRemoval = i;
+            
+            [toBeReturned removeObjectAtIndex:i];
+        }
+        else if (vc == self.mediaControlsSection && hideMediaControlsInCurrentSession) {
+            [toBeReturned removeObjectAtIndex:i];
         }
         else {
-            return landscapeSectionViewControllers;
+            i++;
+        }
+    }
+    
+    NSMutableArray *separators = MSHookIvar<NSMutableArray *>(self, "_dividerViews");
+    
+    NSUInteger expectedCount = toBeReturned.count;
+    
+    if (expectedCount > 1 && !hideSeparators) {
+        while (separators.count > expectedCount-1) {
+            SBControlCenterSeparatorView *separator = (possibleIndexForSeparatorRemoval < separators.count ? separators[possibleIndexForSeparatorRemoval] : [separators lastObject]);
+            
+            if (separator) {
+                [separator removeFromSuperview];
+                [separators removeObjectAtIndex:(possibleIndexForSeparatorRemoval < separators.count ? possibleIndexForSeparatorRemoval : separators.count-1)];
+            }
+        }
+        
+        while (separators.count < expectedCount-1) {
+            SBControlCenterSeparatorView *separator = [[%c(SBControlCenterSeparatorView) alloc] initWithFrame:CGRectZero];
+            
+            [scroller() addSubview:separator];
+            
+            [separators addObject:separator];
         }
     }
     else {
-        if (hideMediaControlsInCurrentSession) {
-            return strippedSectionViewControllers;
+        for (SBControlCenterSeparatorView *separator in separators) {
+            [separator removeFromSuperview];
         }
-        else {
-            return sectionViewControllers;
-        }
+        
+        [separators removeAllObjects];
     }
+    
+    return [toBeReturned autorelease];
 }
 
 %end
@@ -527,8 +526,6 @@ NS_INLINE void reloadCCSections(void) {
     realHeight = 0.0f;
     fakeHeight = 0.0f;
     
-    landscape = NO;
-    
     hideMediaControlsInCurrentSession = NO;
     
     
@@ -538,15 +535,8 @@ NS_INLINE void reloadCCSections(void) {
     [sectionViewControllers release];
     sectionViewControllers = nil;
     
-    [strippedSectionViewControllers release];
-    strippedSectionViewControllers = nil;
-    
     [landscapeSectionViewControllers release];
     landscapeSectionViewControllers = nil;
-    
-    [landscapeStrippedSectionViewControllers release];
-    landscapeStrippedSectionViewControllers = nil;
-    
     
     loadedSections = NO;
 }
@@ -558,19 +548,27 @@ NS_INLINE void reloadCCSections(void) {
 
 - (CGFloat)contentHeightForOrientation:(UIInterfaceOrientation)orientation {
     if (!contentHeightIsSet) {
-        landscape = UIInterfaceOrientationIsLandscape(orientation);
+        currentOrientation = orientation;
         
         CGFloat height = %orig;
         
-        if (landscape) {
+        if (kCCIsInLandscape) {
             realHeight = kCCGrabberHeight;
             
-            NSArray *search = (hideMediaControlsInCurrentSession ? landscapeStrippedSectionViewControllers : landscapeSectionViewControllers);
+            SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(self, "_contentView");
             
-            for (NSUInteger i = 1; i < search.count-1; i++) {
+            NSMutableArray *search = contentView._allSections;
+            
+            NSUInteger i = 1;
+            
+            while (i < search.count-1) {
                 SBControlCenterSectionViewController *controller = search[i];
                 
-                realHeight += [controller contentSizeForOrientation:orientation].height+(i == 1 ? kCCSeparatorHeight : 0.0f);
+                if ([controller enabledForOrientation:currentOrientation]) {
+                    realHeight += [controller contentSizeForOrientation:orientation].height+(i == 1 ? kCCSeparatorHeight : 0.0f);
+                }
+                
+                i++;
             }
             
             fakeHeight = height;
@@ -599,6 +597,22 @@ NS_INLINE void reloadCCSections(void) {
     return contentHeight;
 }
 
+- (void)noteSectionEnabledStateDidChange:(SBControlCenterSectionViewController *)section {
+    [self _updateContentFrame];
+    
+    %orig;
+}
+
+- (void)_updateContentFrame {
+    contentHeightIsSet = NO;
+    
+    %orig;
+    
+    SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(self, "_contentView");
+    
+    [contentView setNeedsLayout];
+}
+
 %new
 - (void)_CCLoader_reloadContentHeight {
     SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(self, "_contentView");
@@ -606,13 +620,8 @@ NS_INLINE void reloadCCSections(void) {
     [contentView setNeedsLayout];
     [contentView layoutIfNeeded];
     
-    contentHeightIsSet = NO;
-    [self _updateContentFrame];
-    
     [UIView animateWithDuration:0.2 delay:0.0 options:(UIViewAnimationOptionCurveEaseInOut | UIViewAnimationOptionBeginFromCurrentState) animations:^{
-        [contentView setNeedsLayout];
-        [contentView layoutIfNeeded];
-        [contentView updateEnabledSections];
+        [self _updateContentFrame];
     } completion:nil];
 }
 
@@ -638,11 +647,13 @@ NS_INLINE void reloadCCSections(void) {
 }
 
 - (void)controlCenterWillPresent {
+    hideMediaControlsInCurrentSession = (hideMediaControlsIfStopped && ![[%c(SBMediaController) sharedInstance] nowPlayingApplication]);
+    
+    NSLog(@"HIDEEEEEEEEEE %i", hideMediaControlsInCurrentSession);
+    
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_CCLoader_reloadContentHeight) name:@"CCLoaderReloadControlCenterHeight" object:nil];
     
     [[NSNotificationCenter defaultCenter] postNotificationName:@"CCLoaderCCWillAppearNotification" object:nil];
-    
-    hideMediaControlsInCurrentSession = (strippedSectionViewControllers && ![[%c(SBMediaController) sharedInstance] nowPlayingApplication]);
     
     SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(self, "_contentView");
     
@@ -656,7 +667,7 @@ NS_INLINE void reloadCCSections(void) {
 - (void)controlCenterDidDismiss {
     %orig;
     
-    if (landscape) {
+    if (kCCIsInLandscape) {
         SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(self, "_contentView");
         
         [contentView _removeSectionController:contentView.settingsSection];
@@ -669,8 +680,6 @@ NS_INLINE void reloadCCSections(void) {
     
     realHeight = 0.0f;
     fakeHeight = 0.0f;
-    
-    landscape = NO;
     
     [[NSNotificationCenter defaultCenter] postNotificationName:@"CCLoaderCCDidDisappearNotification" object:nil];
     
