@@ -280,7 +280,7 @@
 
 %new
 - (void)_CCLoader_controlCenterDidDisappear {
-    if (selfBundleType && CCBundleTypeDefault && [selfSection respondsToSelector:@selector(controlCenterDidDisappear)]) {
+    if (selfBundleType == CCBundleTypeDefault && [selfSection respondsToSelector:@selector(controlCenterDidDisappear)]) {
         [selfSection controlCenterDidDisappear];
     }
     else if (selfBundleType == CCBundleTypeBBWeeApp) {
