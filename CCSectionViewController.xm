@@ -218,7 +218,7 @@
 
 %new
 - (void)_CCLoader_controlCenterWillAppear {
-    if (selfBundleType && CCBundleTypeDefault && [selfSection respondsToSelector:@selector(controlCenterWillAppear)]) {
+    if (selfBundleType == CCBundleTypeDefault && [selfSection respondsToSelector:@selector(controlCenterWillAppear)]) {
         [selfSection controlCenterWillAppear];
     }
     else if (selfBundleType == CCBundleTypeBBWeeApp) {
