@@ -27,6 +27,7 @@
 #import "ControlCenter/SBControlCenterContentContainerView.h"
 #import "ControlCenter/SBControlCenterContentView.h"
 #import "ControlCenter/SBControlCenterSeparatorView.h"
+#import "ControlCenter/SBCCAirStuffSectionController.h"
 
 #import "SBMediaController.h"
 
@@ -336,7 +337,21 @@ NS_INLINE void reloadCCSections(void) {
 
 #pragma mark - Swizzles
 
+//%group debug
+//
+//%hook SBCCAirStuffSectionController
+//
+//- (void)setAirDropEnabled:(BOOL)airdrop {
+//    %orig(NO);
+//}
+//
+//%end
+//
+//%end
+
 %group main
+
+
 
 %hook SBControlCenterContentView
 
@@ -345,76 +360,81 @@ NS_INLINE void reloadCCSections(void) {
         [self addSubview:scroller()];
     }
     
+    %orig;
     
     CGRect frame = self.bounds;
     
-    frame.origin.y = kCCGrabberHeight;
-    frame.size.height = fakeHeight-kCCGrabberHeight;
-    scroller().frame = frame;
-    
-    frame.size.height = realHeight-kCCGrabberHeight;
-    scroller().contentSize = frame.size;
-    
-    
-    
+    if (!CGRectIsEmpty(frame)) {
+        frame.origin.y = kCCGrabberHeight;
+        frame.size.height = fakeHeight-kCCGrabberHeight;
+        scroller().frame = frame;
+        
+        frame.size.height = realHeight-kCCGrabberHeight;
+        scroller().contentSize = frame.size;
+        
+        
+        NSUInteger index = 0;
+        
+        NSMutableArray *sections = self._allSections;
+        
+        UIViewController *previous = nil;
+        
+        BOOL landscape = kCCIsInLandscape;
+        
+        while (index < sections.count) {
+            SBControlCenterSectionViewController *viewController = sections[index];
+            
+            if ([viewController enabledForOrientation:currentOrientation]) {
+                UIView *view = viewController.view;
+                
+                view.hidden = NO;
+                
+                CGRect frame = view.frame;
+                
+                BOOL landscapeSideSection = (kCCIsInLandscape && (index == 0 || index == sections.count-1));
+                
+                if (landscapeSideSection) {
+                    frame.size.height = fakeHeight;
+                }
+                else {
+                    if (view.superview != scroller()) {
+                        [scroller() addSubview:view];
+                    }
+                    
+                    frame.origin.y = CGRectGetMaxY(previous.view.frame)+kCCSeparatorHeight;
+                    frame.size.height = [viewController contentSizeForOrientation:currentOrientation].height;
+                }
+                
+                view.frame = frame;
+                
+                UIView *separator = [self _separatorAtIndex:index-landscape];
+                
+                if (separator) {
+                    if (separator.superview != scroller()) {
+                        [scroller() addSubview:separator];
+                    }
+                    
+                    CGRect separatorFrame = separator.frame;
+                    
+                    separatorFrame.origin.y = CGRectGetMaxY(view.frame);
+                    
+                    separator.frame = separatorFrame;
+                }
+                
+                if (!landscapeSideSection) {
+                    previous = viewController;
+                }
+            }
+            
+            index++;
+        }
+    }
+}
+
+- (void)_addSectionController:(SBControlCenterSectionViewController *)controller {
     %orig;
     
     
-    
-    NSUInteger index = 0;
-    
-    NSArray *sections = self._allSections;
-    
-    UIViewController *previous = nil;
-    
-    BOOL landscape = kCCIsInLandscape;
-    
-    while (index < sections.count) {
-        SBControlCenterSectionViewController *viewController = sections[index];
-        
-        UIView *view = viewController.view;
-        
-        if (view.superview && [viewController enabledForOrientation:currentOrientation]) {
-            CGRect frame = view.frame;
-            
-            BOOL landscapeSideSection = (kCCIsInLandscape && (index == 0 || index == sections.count-1));
-            
-            if (landscapeSideSection) {
-                frame.size.height = fakeHeight;
-            }
-            else {
-                if (view.superview != scroller()) {
-                    [scroller() addSubview:view];
-                }
-                
-                frame.origin.y = CGRectGetMaxY(previous.view.frame)+kCCSeparatorHeight;
-                frame.size.height = [viewController contentSizeForOrientation:currentOrientation].height;
-            }
-            
-            view.frame = frame;
-            
-            
-            UIView *separator = [self _separatorAtIndex:index-landscape];
-            
-            if (separator) {
-                if (separator.superview != scroller()) {
-                    [scroller() addSubview:separator];
-                }
-                
-                CGRect separatorFrame = separator.frame;
-                
-                separatorFrame.origin.y = CGRectGetMaxY(view.frame);
-                
-                separator.frame = separatorFrame;
-            }
-            
-            if (!landscapeSideSection) {
-                previous = viewController;
-            }
-        }
-        
-        index++;
-    }
 }
 
 - (void)_removeSectionController:(SBControlCenterSectionViewController *)controller {
@@ -449,9 +469,21 @@ NS_INLINE void reloadCCSections(void) {
         SBControlCenterSectionViewController *vc = toBeReturned[i];
         
         if (![vc enabledForOrientation:currentOrientation]) {
-            possibleIndexForSeparatorRemoval = i;
-            
-            [toBeReturned removeObjectAtIndex:i];
+            if ([vc isKindOfClass:%c(SBCCAirStuffSectionController)]) {
+                if ([(SBCCAirStuffSectionController *)vc airDropEnabled] || [(SBCCAirStuffSectionController *)vc airPlayEnabled]) {
+                    [(SBCCAirStuffSectionController *)vc _updateSubsectionVisibilityAnimated:YES];
+                }
+                else {
+                    possibleIndexForSeparatorRemoval = i;
+                    
+                    [toBeReturned removeObjectAtIndex:i];
+                }
+            }
+            else {
+                possibleIndexForSeparatorRemoval = i;
+                
+                [toBeReturned removeObjectAtIndex:i];
+            }
         }
         else if (vc == self.mediaControlsSection && hideMediaControlsInCurrentSession) {
             [toBeReturned removeObjectAtIndex:i];
@@ -495,7 +527,6 @@ NS_INLINE void reloadCCSections(void) {
 }
 
 %end
-
 
 %hook SBControlCenterController
 
@@ -598,7 +629,9 @@ NS_INLINE void reloadCCSections(void) {
 }
 
 - (void)noteSectionEnabledStateDidChange:(SBControlCenterSectionViewController *)section {
-    [self _updateContentFrame];
+    if (section.view.window) {
+        [self _updateContentFrame];
+    }
     
     %orig;
 }
@@ -627,7 +660,7 @@ NS_INLINE void reloadCCSections(void) {
 
 - (void)controlCenterWillBeginTransition {
     if (visible) {
-//        visible = NO;
+        //        visible = NO;
         [[NSNotificationCenter defaultCenter] postNotificationName:@"CCLoaderCCWillDisappearNotification" object:nil];
     }
     
@@ -648,8 +681,6 @@ NS_INLINE void reloadCCSections(void) {
 
 - (void)controlCenterWillPresent {
     hideMediaControlsInCurrentSession = (hideMediaControlsIfStopped && ![[%c(SBMediaController) sharedInstance] nowPlayingApplication]);
-    
-    NSLog(@"HIDEEEEEEEEEE %i", hideMediaControlsInCurrentSession);
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_CCLoader_reloadContentHeight) name:@"CCLoaderReloadControlCenterHeight" object:nil];
     
@@ -674,7 +705,7 @@ NS_INLINE void reloadCCSections(void) {
         [contentView _removeSectionController:contentView.quickLaunchSection];
     }
     
-//    [scroller() removeFromSuperview];
+    //    [scroller() removeFromSuperview];
     
     scroller().contentOffset = CGPointZero;
     
@@ -848,7 +879,10 @@ NS_INLINE void reloadCCSections(void) {
         [enabledSections release];
         [disabledSections release];
         
-		%init(main);
+
+        %init(main);
+        
+//        %init(debug);
         
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)reloadCCSections, CFSTR("de.j-gessner.ccloader.settingschanged"), NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
 	}

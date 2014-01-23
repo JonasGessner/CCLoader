@@ -29,8 +29,6 @@
 
 @interface StocksWeeAppController : _SBUIWidgetViewController
 
-- (void)unloadView;
-
 @end
 
 
@@ -86,42 +84,50 @@
         
         _SBUIWidgetViewController <CCSection, BBWeeAppController> *section = [[principalClass alloc] init];
 
-         if (type == CCBundleTypeWeeApp) {
-             [section setWidgetHost:self];
-         }
+        if (type == CCBundleTypeWeeApp) {
+            [section setWidgetHost:self];
+        }
+        else if (type == CCBundleTypeDefault && [selfSection respondsToSelector:@selector(setDelegate:)]) {
+            [section setDelegate:self];
+        }
         
         [self _CCLoader_setSection:section];
 
         [section release];
-        
-        if (type == CCBundleTypeDefault && [selfSection respondsToSelector:@selector(setDelegate:)]) {
-            [section setDelegate:self];
-        }
     }
     return self;
 }
 
 - (void)dealloc {
-    %orig;
-    
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCLoaderCCWillAppearNotification" object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCLoaderCCDidAppearNotification" object:nil];
     
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCLoaderCCWillDisappearNotification" object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:@"CCLoaderCCDidDisappearNotification" object:nil];
     
-    [selfSection setWidgetHost:nil];
+    if (selfBundleType == CCBundleTypeWeeApp) {
+        [selfSection setWidgetHost:nil];
+    }
+    else if (selfBundleType == CCBundleTypeDefault && [selfSection respondsToSelector:@selector(setDelegate:)]) {
+        [selfSection setDelegate:nil];
+    }
     
-    [self _CCLoader_setSection:nil];
+    [selfView _CCLoader_setContentView:nil];
     
     [self.view release];
     self.view = nil;
     
-    [self._CCLoader_bundle unload];
+    [self _CCLoader_setSection:nil];
 
-    [self _CCLoader_setBundle:nil];
+    if (selfBundleType == CCBundleTypeDefault) {
+        [self._CCLoader_bundle unload];
+    }
     
+    [self _CCLoader_setBundle:nil];
+
     [self _CCLoader_setReplacingSectionViewController:nil];
+    
+    %orig;
 }
 
 %new
@@ -196,8 +202,8 @@
 }
 
 %new
-- (void)_CCLoader_setBundle:(NSBundle *)bundle {
-    objc_setAssociatedObject(self, @selector(bundle), bundle, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+- (void)_CCLoader_setBundle:(NSBundle *)_bundle {
+    objc_setAssociatedObject(self, @selector(bundle), _bundle, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 %new

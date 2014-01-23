@@ -1,7 +1,7 @@
 Package: de.j-gessner.ccloader
 Name: CCLoader
 Depends: mobilesubstrate, firmware (>= 7.0)
-Version: 1.2.1
+Version: 1.2.2~Beta1
 Architecture: iphoneos-arm
 Description: Completely customize Control Center.
 Author: Jonas Gessner
