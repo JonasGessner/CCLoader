@@ -4,7 +4,10 @@ CCLoader
 Available to download from Cydia: http://cydia.saurik.com/package/de.j-gessner.ccloader
 
 ###General
-CCLoader loads custom sections into the iOS 7 Control Center. To create a custom section check out the Control Center NIC template here: https://github.com/JonasGessner/Theos-NIC-Templates
+CCLoader loads custom sections into the iOS 7 Control Center. Templates for creating a CCLoader plugin are available for theos and for iOSOpenDev:
+<br>
+CCLoader Plugin template for theos: https://github.com/JonasGessner/Theos-NIC-Templates
+CCLoader Plugin template for iOSOpenDev: https://github.com/JonasGessner/iOSOpenDev-Xcode-Templates
 <br>
 <br>
 
