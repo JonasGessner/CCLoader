@@ -40,8 +40,8 @@
 
 static NSMutableDictionary *customSectionViewControllers = nil;
 
-static NSArray *sectionViewControllers = nil;
-static NSArray *landscapeSectionViewControllers = nil;
+static NSMutableArray *sectionViewControllers = nil;
+static NSMutableArray *landscapeSectionViewControllers = nil;
 
 static BOOL hideMediaControlsInCurrentSession = NO;
 
@@ -137,7 +137,7 @@ NS_INLINE BOOL checkBundleForType(NSBundle *bundle, CCBundleType type) {
     return NO;
 }
 
-NS_INLINE NSArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionary *replacements, SBControlCenterViewController *viewController, SBControlCenterContentView *contentView, NSUInteger *mediaControlsIndex, BOOL cleanUnusedSections) {
+NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionary *replacements, SBControlCenterViewController *viewController, SBControlCenterContentView *contentView, NSUInteger *mediaControlsIndex, BOOL cleanUnusedSections) {
     CCBundleLoader *loader = [CCBundleLoader sharedInstance];
     
     NSMutableArray *_sectionViewControllers = [[NSMutableArray alloc] initWithCapacity:IDs.count];
@@ -272,11 +272,7 @@ NS_INLINE NSArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionary *repl
         customSectionViewControllers = nil;
     }
     
-    NSArray *final = _sectionViewControllers.copy;
-    
-    [_sectionViewControllers release];
-    
-    return final;
+    return _sectionViewControllers;
 }
 
 NS_INLINE void loadCCSections(SBControlCenterViewController *viewController, SBControlCenterContentView *contentView) {
@@ -350,7 +346,7 @@ NS_INLINE void reloadCCSections(void) {
         [self addSubview:scroller()];
     }
     
-     NSMutableArray *_separators = MSHookIvar<NSMutableArray *>(self, "_dividerViews");
+    NSMutableArray *_separators = MSHookIvar<NSMutableArray *>(self, "_dividerViews");
     
     if (_separators) {
         for (SBControlCenterSeparatorView *separator in _separators) {
@@ -383,6 +379,8 @@ NS_INLINE void reloadCCSections(void) {
         
         NSUInteger count = 0;
         
+        BOOL landscape = kCCIsInLandscape;
+        
         while (index < sections.count) {
             SBControlCenterSectionViewController *viewController = sections[index];
             
@@ -409,41 +407,42 @@ NS_INLINE void reloadCCSections(void) {
                 
                 
                 
-                if (index < sections.count-1) {
-                if (!separators) {
-                    separators = [[NSMutableArray alloc] init];
-                }
-                
-                SBControlCenterSeparatorView *separator = (separators.count > count ? separators[count] : nil);
-                
-                if (!separator) {
-                    separator = [[%c(SBControlCenterSeparatorView) alloc] initWithFrame:CGRectZero];
+                if (!landscapeSideSection && index < sections.count-1-landscape) {
+                    if (!separators) {
+                        separators = [[NSMutableArray alloc] init];
+                    }
                     
-                    [scroller() addSubview:separator];
+                    SBControlCenterSeparatorView *separator = (separators.count > count ? separators[count] : nil);
                     
-                    [separators addObject:separator];
+                    if (!separator) {
+                        separator = [[%c(SBControlCenterSeparatorView) alloc] initWithFrame:CGRectZero];
+                        
+                        [scroller() addSubview:separator];
+                        
+                        [separators addObject:separator];
+                        
+                        [separator release];
+                    }
                     
-                    [separator release];
-                }
-                
-                
-                if (separator.superview != scroller()) {
-                    [scroller() addSubview:separator];
-                }
-                
-                CGRect separatorFrame = CGRectZero;
-                
-                separatorFrame.origin.x = view.frame.origin.x;
-                
-                separatorFrame.size.width = view.frame.size.width;
-                
-                separatorFrame.size.height = kCCSeparatorHeight;
-                
-                separatorFrame.origin.y = CGRectGetMaxY(view.frame);
-                
-                separator.frame = separatorFrame;
-                
-                count++;
+                    
+                    if (separator.superview != scroller()) {
+                        [scroller() addSubview:separator];
+                    }
+                    
+                    separator.hidden = hideSeparators;
+                    
+                    CGRect separatorFrame = CGRectZero;
+                    
+                    separatorFrame.origin.x = view.frame.origin.x;
+                    separatorFrame.origin.y = CGRectGetMaxY(view.frame);
+                    
+                    separatorFrame.size.width = view.frame.size.width;
+                    separatorFrame.size.height = kCCSeparatorHeight;
+                    
+                    
+                    separator.frame = separatorFrame;
+                    
+                    count++;
                 }
                 
                 if (!landscapeSideSection) {
@@ -479,7 +478,7 @@ NS_INLINE void reloadCCSections(void) {
 }
 
 - (NSMutableArray *)_allSections {
-    NSArray *toBeReturned = nil;
+    NSMutableArray *toBeReturned = nil;
     
     if (kCCIsInLandscape) {
         toBeReturned = landscapeSectionViewControllers;
@@ -487,8 +486,6 @@ NS_INLINE void reloadCCSections(void) {
     else {
         toBeReturned = sectionViewControllers;
     }
-    
-    NSUInteger i = 0;
     
     for (SBControlCenterSectionViewController *vc in toBeReturned) {
         if (![vc enabledForOrientation:currentOrientation]) {
@@ -499,11 +496,10 @@ NS_INLINE void reloadCCSections(void) {
         }
         else {
             vc.view.hidden = NO;
-            i++;
         }
     }
     
-    return [toBeReturned.mutableCopy autorelease];
+    return toBeReturned;
 }
 
 %end
@@ -883,7 +879,7 @@ NS_INLINE void reloadCCSections(void) {
         [enabledSections release];
         [disabledSections release];
         
-
+        
         %init(main);
         
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)reloadCCSections, CFSTR("de.j-gessner.ccloader.settingschanged"), NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
