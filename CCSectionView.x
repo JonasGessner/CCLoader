@@ -14,9 +14,9 @@
 %subclass CCSectionView : SBControlCenterSectionView
 
 - (void)dealloc {
-    %orig;
-    
     [self _CCLoader_setContentView:nil];
+    
+    %orig;
 }
 
 %new

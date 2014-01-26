@@ -524,8 +524,6 @@ NS_INLINE void reloadCCSections(void) {
 
 
 - (void)dealloc {
-    %orig;
-    
     [scroller() removeFromSuperview];
     [scroller() release];
     _scroller = nil;
@@ -555,6 +553,8 @@ NS_INLINE void reloadCCSections(void) {
     landscapeSectionViewControllers = nil;
     
     loadedSections = NO;
+    
+    %orig;
 }
 
 %end

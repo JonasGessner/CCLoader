@@ -92,8 +92,6 @@
         }
         
         [self _CCLoader_setSection:section];
-
-        [section release];
     }
     return self;
 }
@@ -114,10 +112,11 @@
     
     [selfView _CCLoader_setContentView:nil];
     
+    [selfSection release];
+    [self _CCLoader_setSection:nil];
+    
     [self.view release];
     self.view = nil;
-    
-    [self _CCLoader_setSection:nil];
 
     if (selfBundleType == CCBundleTypeDefault) {
         [self._CCLoader_bundle unload];
@@ -212,8 +211,8 @@
 }
 
 %new
-- (void)_CCLoader_setSection:(id <CCSection>)section {
-    objc_setAssociatedObject(self, @selector(section), section, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+- (void)_CCLoader_setSection:(id <CCSection>)_section {
+    objc_setAssociatedObject(self, @selector(section), _section, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 %new
