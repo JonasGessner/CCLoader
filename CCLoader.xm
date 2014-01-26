@@ -161,7 +161,7 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
     CCSectionViewController *(^loadCustomSection)(NSString *sectionIdentifier, NSBundle *loadingBundle, CCBundleType type) = ^CCSectionViewController * (NSString *sectionIdentifier, NSBundle *loadingBundle, CCBundleType type) {
         if (!checkBundleForType(loadingBundle, type)) {
             [loadingBundle unload];
-            
+            NSLog(@"[CCLoader] ERROR: Bundle %@ is invalid", loadingBundle);
             return nil;
         }
         else {
