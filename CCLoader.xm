@@ -96,7 +96,7 @@ NS_INLINE SBControlCenterSectionViewController *stockSectionViewControllerForID(
     }
 }
 
-NS_INLINE void setStockSectionViewControllerForID(SBControlCenterContentView *contentView, NSString *sectionID, id value) {
+/*NS_INLINE void setStockSectionViewControllerForID(SBControlCenterContentView *contentView, NSString *sectionID, id value) {
     if ([sectionID isEqualToString:@"com.apple.controlcenter.settings"]) {
         contentView.settingsSection = value;
     }
@@ -112,7 +112,7 @@ NS_INLINE void setStockSectionViewControllerForID(SBControlCenterContentView *co
     else if ([sectionID isEqualToString:@"com.apple.controlcenter.quick-launch"]) {
         contentView.quickLaunchSection = value;
     }
-}
+}*/
 
 NS_INLINE BOOL checkBundleForType(NSBundle *bundle, CCBundleType type) {
     if (type == CCBundleTypeDefault) {
