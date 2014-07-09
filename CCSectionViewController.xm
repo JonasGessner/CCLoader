@@ -287,7 +287,8 @@
         
         //For some reason this needs to be here or the Calendar Widget won't be displayed correctly after the first dismissal o.O
         if ([selfSection isKindOfClass:%c(EKCalendarWidgetViewController)]) {
-            [(EKCalendarWidgetViewController *)selfSection _refreshDayView];
+            if ([(EKCalendarWidgetViewController *)selfSection respondsToSelector:@selector(_refreshDayView)])
+                [(EKCalendarWidgetViewController *)selfSection _refreshDayView];
         }
     }
 }

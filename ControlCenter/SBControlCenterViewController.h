@@ -36,7 +36,12 @@
 - (void)sectionWantsControlCenterDismissal:(id)arg1;
 - (void)_handlePan:(id)arg1;
 - (void)_handleTap:(id)arg1;
+
+// not in ios 7.1
 - (void)_updateContentFrame;
+// new
+- (void)updateContentFrame;
+
 - (void)viewDidAppear:(BOOL)arg1;
 - (void)viewDidLoad;
 - (void)loadView;

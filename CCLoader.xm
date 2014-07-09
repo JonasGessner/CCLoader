@@ -629,20 +629,22 @@ NS_INLINE void reloadCCSections(void) {
 - (void)noteSectionEnabledStateDidChange:(SBControlCenterSectionViewController *)section {
     if (self.view.window) {
         [UIView animateWithDuration:0.2 delay:0.0 options:(UIViewAnimationOptionCurveEaseInOut | UIViewAnimationOptionBeginFromCurrentState) animations:^{
-            [self _updateContentFrame];
+            [self updateContentFrame];
         } completion:nil];
     }
     
     %orig;
 }
 
-- (void)_updateContentFrame {
+%new
+- (void)updateContentFrame {
     contentHeightIsSet = NO;
     
-    %orig;
+    // ios 7.1 removed this method
+    if ([self respondsToSelector:@selector(_updateContentFrame)])
+        [self _updateContentFrame];
     
     SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(self, "_contentView");
-    
     [contentView setNeedsLayout];
 }
 
@@ -654,7 +656,7 @@ NS_INLINE void reloadCCSections(void) {
     [contentView layoutIfNeeded];
     
     [UIView animateWithDuration:0.2 delay:0.0 options:(UIViewAnimationOptionCurveEaseInOut | UIViewAnimationOptionBeginFromCurrentState) animations:^{
-        [self _updateContentFrame];
+        [self updateContentFrame];
     } completion:nil];
 }
 
