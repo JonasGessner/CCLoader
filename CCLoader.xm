@@ -96,7 +96,7 @@ NS_INLINE SBControlCenterSectionViewController *stockSectionViewControllerForID(
     }
 }
 
-NS_INLINE void setStockSectionViewControllerForID(SBControlCenterContentView *contentView, NSString *sectionID, id value) {
+/*NS_INLINE void setStockSectionViewControllerForID(SBControlCenterContentView *contentView, NSString *sectionID, id value) {
     if ([sectionID isEqualToString:@"com.apple.controlcenter.settings"]) {
         contentView.settingsSection = value;
     }
@@ -112,7 +112,7 @@ NS_INLINE void setStockSectionViewControllerForID(SBControlCenterContentView *co
     else if ([sectionID isEqualToString:@"com.apple.controlcenter.quick-launch"]) {
         contentView.quickLaunchSection = value;
     }
-}
+}*/
 
 NS_INLINE BOOL checkBundleForType(NSBundle *bundle, CCBundleType type) {
     if (type == CCBundleTypeDefault) {
@@ -629,20 +629,27 @@ NS_INLINE void reloadCCSections(void) {
 - (void)noteSectionEnabledStateDidChange:(SBControlCenterSectionViewController *)section {
     if (self.view.window) {
         [UIView animateWithDuration:0.2 delay:0.0 options:(UIViewAnimationOptionCurveEaseInOut | UIViewAnimationOptionBeginFromCurrentState) animations:^{
-            [self _updateContentFrame];
+            [self updateContentFrame];
         } completion:nil];
     }
     
     %orig;
 }
 
-- (void)_updateContentFrame {
+%new
+- (void)updateContentFrame {
     contentHeightIsSet = NO;
     
-    %orig;
+    // ios 7.1 moved this method to the container view
+    if ([self respondsToSelector:@selector(_updateContentFrame)])
+        [self _updateContentFrame];
+    else
+    {
+        SBControlCenterContainerView *containerView = MSHookIvar<SBControlCenterContainerView *>(self, "_containerView");
+        [containerView _updateContentFrame];
+    }
     
     SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(self, "_contentView");
-    
     [contentView setNeedsLayout];
 }
 
@@ -654,7 +661,7 @@ NS_INLINE void reloadCCSections(void) {
     [contentView layoutIfNeeded];
     
     [UIView animateWithDuration:0.2 delay:0.0 options:(UIViewAnimationOptionCurveEaseInOut | UIViewAnimationOptionBeginFromCurrentState) animations:^{
-        [self _updateContentFrame];
+        [self updateContentFrame];
     } completion:nil];
 }
 
