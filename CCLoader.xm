@@ -640,9 +640,14 @@ NS_INLINE void reloadCCSections(void) {
 - (void)updateContentFrame {
     contentHeightIsSet = NO;
     
-    // ios 7.1 removed this method
+    // ios 7.1 moved this method to the container view
     if ([self respondsToSelector:@selector(_updateContentFrame)])
         [self _updateContentFrame];
+    else
+    {
+        SBControlCenterContainerView *containerView = MSHookIvar<SBControlCenterContainerView *>(self, "_containerView");
+        [containerView _updateContentFrame];
+    }
     
     SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(self, "_contentView");
     [contentView setNeedsLayout];
