@@ -63,9 +63,9 @@
             _hideSeparators = [prefs[@"HideSeparators"] boolValue];
         }
         
-        _enabled = [NSMutableOrderedSet orderedSetWithArray:prefs[@"EnabledSections"]];
+        _enabled = (iPad ? [NSMutableOrderedSet orderedSetWithArray:kCCLoaderStockOrderedSections] : [NSMutableOrderedSet orderedSetWithArray:prefs[@"EnabledSections"]]);
         
-        _disabled = [NSMutableOrderedSet orderedSetWithArray:prefs[@"DisabledSections"]];
+        _disabled = (iPad ? nil : [NSMutableOrderedSet orderedSetWithArray:prefs[@"DisabledSections"]]);
         
         _replacements = [prefs[@"ReplacingBundles"] mutableCopy];
     }
@@ -188,15 +188,11 @@
 #pragma mark - UITableViewDataSource
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return (iPad ? 1 : 3);
+    return (iPad ? 2 : 3);
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    if (iPad) {
-        return 0;
-    }
-    
-    if (section == 2) {
+    if (section == 2-iPad) {
         return 2;
     }
     
@@ -218,27 +214,34 @@
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
     if (iPad) {
-        return nil;
-    }
-    if (section == 0) {
-        return @"Enabled Sections";
-    }
-    else if (section == 1) {
-        return @"Disabled Sections";
-    }
-    else if (section == 2) {
-        return @"Options";
+        if (section == 0) {
+            return @"Control Center Sections";
+        }
+        else if (section == 2) {
+            return @"Options";
+        }
+        else {
+            return nil;
+        }
     }
     else {
-        return nil;
+        if (section == 0) {
+            return @"Enabled Sections";
+        }
+        else if (section == 1) {
+            return @"Disabled Sections";
+        }
+        else if (section == 2) {
+            return @"Options";
+        }
+        else {
+            return nil;
+        }
     }
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
-    if (iPad) {
-        return [NSString stringWithFormat:@"There's nothing to see here. CCLoader doesn't have any configurable options on iPads. It can however be used as a developer utility for replacing stock Control Center sections with custom ones.\n\n© %@ Jonas Gessner", (2014 < kYear ? [NSString stringWithFormat:@"2014-%lu", (unsigned long)kYear] : @"2014")];
-    }
-    if (section == 2) {
+    if (section == 2-iPad) {
         return [NSString stringWithFormat:@"Dynamic Media Controls: If no media is playing the media controls will not be shown in Control Center.\n\n\n© %@ Jonas Gessner", (2014 < kYear ? [NSString stringWithFormat:@"2014-%lu", (unsigned long)kYear] : @"2014")];
     }
     else {
@@ -251,7 +254,7 @@
     
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellID forIndexPath:indexPath];
     
-    if (indexPath.section == 2) {
+    if (indexPath.section == 2-iPad) {
         if (indexPath.row == 0) {
             UISwitch *accessory = [UISwitch new];
             accessory.on = !_hideSeparators;
@@ -273,7 +276,7 @@
             cell.textLabel.text = @"Dynamic Media Controls";
         }
     }
-    else if ((indexPath.section == 0 && _enabled.count) || (indexPath.section == 1 && _disabled.count)) {
+    else if ((indexPath.section == 0 && _enabled.count) || (!iPad && indexPath.section == 1 && _disabled.count)) {
         NSString *ID = (indexPath.section == 0 ? _enabled[indexPath.row] : _disabled[indexPath.row]);
         
         CCBundleLoader *loader = [CCBundleLoader sharedInstance];
@@ -312,7 +315,7 @@
 }
 
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
-    return (indexPath.section < 2);
+    return (indexPath.section < 2-iPad);
 }
 
 - (BOOL)tableView:(UITableView *)tableView shouldHighlightRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -331,7 +334,7 @@
 }
 
 - (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath {
-    return (indexPath.section < 2 && ((indexPath.section == 0 && _enabled.count) || (indexPath.section == 1 && _disabled.count)));
+    return (!iPad && indexPath.section < 2 && ((indexPath.section == 0 && _enabled.count) || (indexPath.section == 1 && _disabled.count)));
 }
 
 #pragma mark - UITableViewDelegate
@@ -339,7 +342,7 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     
-    if ((indexPath.section == 0 && _enabled.count) || (indexPath.section == 1 && _disabled.count)) {
+    if ((indexPath.section == 0 && _enabled.count) || (!iPad && indexPath.section == 1 && _disabled.count)) {
         CCBundleLoader *loader = [CCBundleLoader sharedInstance];
         
         NSDictionary *replacements = loader.replacingBundles;
@@ -385,7 +388,7 @@
     if (proposedDestinationIndexPath.section > 1) {
         return sourceIndexPath;
     }
-    else if ((proposedDestinationIndexPath.section == 0 && !_enabled.count) || (proposedDestinationIndexPath.section == 1 && !_disabled.count)) {
+    else if ((proposedDestinationIndexPath.section == 0 && !_enabled.count) || (!iPad && proposedDestinationIndexPath.section == 1 && !_disabled.count)) {
         return [NSIndexPath indexPathForRow:0 inSection:proposedDestinationIndexPath.section];
     }
     else {

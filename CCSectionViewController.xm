@@ -377,6 +377,7 @@
             return CGSizeMake(CGFLOAT_MAX, height);
         }
         else {
+//        NSLog(@"RETURNING SIZE %@", NSStringFromCGSize([replacingSection contentSizeForOrientation:orientation]));
             return [replacingSection contentSizeForOrientation:orientation];
         }
     }

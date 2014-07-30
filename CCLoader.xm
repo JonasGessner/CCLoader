@@ -62,15 +62,15 @@ static BOOL hideMediaControlsIfStopped = NO;
 static BOOL hideSeparators = NO;
 static BOOL visible = NO;
 
-static CCScrollView *_scroller = nil;
+static CCScrollView *_scrollView = nil;
 
-NS_INLINE UIScrollView *scroller(void) {
-    if (!_scroller) {
-        _scroller = [[CCScrollView alloc] init];
-        _scroller.scrollsToTop = NO;
+NS_INLINE UIScrollView *scrollView(void) {
+    if (!_scrollView) {
+        _scrollView = [[CCScrollView alloc] init];
+        _scrollView.scrollsToTop = NO;
     }
     
-    return _scroller;
+    return _scrollView;
 }
 
 #pragma mark - Helper Functions
@@ -96,7 +96,7 @@ NS_INLINE SBControlCenterSectionViewController *stockSectionViewControllerForID(
     }
 }
 
-NS_INLINE void setStockSectionViewControllerForID(SBControlCenterContentView *contentView, NSString *sectionID, id value) {
+/*NS_INLINE void setStockSectionViewControllerForID(SBControlCenterContentView *contentView, NSString *sectionID, id value) {
     if ([sectionID isEqualToString:@"com.apple.controlcenter.settings"]) {
         contentView.settingsSection = value;
     }
@@ -112,7 +112,7 @@ NS_INLINE void setStockSectionViewControllerForID(SBControlCenterContentView *co
     else if ([sectionID isEqualToString:@"com.apple.controlcenter.quick-launch"]) {
         contentView.quickLaunchSection = value;
     }
-}
+}*/
 
 NS_INLINE BOOL checkBundleForType(NSBundle *bundle, CCBundleType type) {
     if (type == CCBundleTypeDefault) {
@@ -131,7 +131,6 @@ NS_INLINE BOOL checkBundleForType(NSBundle *bundle, CCBundleType type) {
         Class principalClass = [bundle classNamed:[iOS7Info.allValues lastObject]];
         
         return [principalClass isSubclassOfClass:[_SBUIWidgetViewController class]];
-        
     }
     
     return NO;
@@ -158,7 +157,7 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
     
     NSMutableSet *usedCustomSections = (cleanUnusedSections ? [NSMutableSet setWithArray:customSectionViewControllers.allKeys] : nil);
     
-    CCSectionViewController *(^loadCustomSection)(NSString *sectionIdentifier, NSBundle *loadingBundle, CCBundleType type) = ^CCSectionViewController * (NSString *sectionIdentifier, NSBundle *loadingBundle, CCBundleType type) {
+    CCSectionViewController *(^loadCustomSection)(NSString *sectionIdentifier, NSBundle *loadingBundle, CCBundleType type) = ^CCSectionViewController *(NSString *sectionIdentifier, NSBundle *loadingBundle, CCBundleType type) {
         if (!checkBundleForType(loadingBundle, type)) {
             [loadingBundle unload];
             NSLog(@"[CCLoader] ERROR: Bundle %@ is invalid", loadingBundle);
@@ -342,8 +341,12 @@ NS_INLINE void reloadCCSections(void) {
 %hook SBControlCenterContentView
 
 - (void)layoutSubviews {
-    if (scroller().superview != self) {
-        [self addSubview:scroller()];
+    if (iPad) {
+        return %orig;
+    }
+    
+    if (scrollView().superview != self) {
+        [self addSubview:scrollView()];
     }
     
     NSMutableArray *_separators = MSHookIvar<NSMutableArray *>(self, "_dividerViews");
@@ -365,10 +368,10 @@ NS_INLINE void reloadCCSections(void) {
     if (!CGRectIsEmpty(frame)) {
         frame.origin.y = kCCGrabberHeight;
         frame.size.height = contentHeight-kCCGrabberHeight;
-        scroller().frame = frame;
+        scrollView().frame = frame;
         
         frame.size.height = realContentHeight-kCCGrabberHeight;
-        scroller().contentSize = frame.size;
+        scrollView().contentSize = frame.size;
         
         
         NSUInteger index = 0;
@@ -377,7 +380,7 @@ NS_INLINE void reloadCCSections(void) {
         
         UIViewController *previous = nil;
         
-        NSUInteger count = 0;
+        NSUInteger separatorCount = 0;
         
         BOOL landscape = kCCIsInLandscape;
         
@@ -395,8 +398,8 @@ NS_INLINE void reloadCCSections(void) {
                     frame.size.height = contentHeight;
                 }
                 else {
-                    if (view.superview != scroller()) {
-                        [scroller() addSubview:view];
+                    if (view.superview != scrollView()) {
+                        [scrollView() addSubview:view];
                     }
                     
                     frame.origin.y = CGRectGetMaxY(previous.view.frame)+kCCSeparatorHeight;
@@ -407,17 +410,17 @@ NS_INLINE void reloadCCSections(void) {
                 
                 
                 
-                if (!landscapeSideSection && index < sections.count-1-landscape) {
+                if (!landscapeSideSection && index < sections.count-1-landscape && !CGRectIsEmpty(frame)) {
                     if (!separators) {
                         separators = [[NSMutableArray alloc] init];
                     }
                     
-                    SBControlCenterSeparatorView *separator = (separators.count > count ? separators[count] : nil);
+                    SBControlCenterSeparatorView *separator = (separators.count > separatorCount ? separators[separatorCount] : nil);
                     
                     if (!separator) {
                         separator = [[%c(SBControlCenterSeparatorView) alloc] initWithFrame:CGRectZero];
                         
-                        [scroller() addSubview:separator];
+                        [scrollView() addSubview:separator];
                         
                         [separators addObject:separator];
                         
@@ -425,8 +428,8 @@ NS_INLINE void reloadCCSections(void) {
                     }
                     
                     
-                    if (separator.superview != scroller()) {
-                        [scroller() addSubview:separator];
+                    if (separator.superview != scrollView()) {
+                        [scrollView() addSubview:separator];
                     }
                     
                     separator.hidden = hideSeparators;
@@ -442,7 +445,7 @@ NS_INLINE void reloadCCSections(void) {
                     
                     separator.frame = separatorFrame;
                     
-                    count++;
+                    separatorCount++;
                 }
                 
                 if (!landscapeSideSection) {
@@ -453,7 +456,7 @@ NS_INLINE void reloadCCSections(void) {
             index++;
         }
         
-        while (separators.count > count) {
+        while (separators.count > separatorCount) {
             SBControlCenterSeparatorView *separator = separators.lastObject;
             
             [separator removeFromSuperview];
@@ -464,6 +467,10 @@ NS_INLINE void reloadCCSections(void) {
 }
 
 - (void)_removeSectionController:(SBControlCenterSectionViewController *)controller {
+    if (iPad) {
+        return %orig;
+    }
+    
     %orig;
     
     [controller willMoveToParentViewController:nil];
@@ -472,6 +479,10 @@ NS_INLINE void reloadCCSections(void) {
 }
 
 - (void)setFrame:(CGRect)frame {
+    if (iPad) {
+        return %orig;
+    }
+    
     frame.size.height = realContentHeight;
     
     %orig;
@@ -524,9 +535,9 @@ NS_INLINE void reloadCCSections(void) {
 
 
 - (void)dealloc {
-    [scroller() removeFromSuperview];
-    [scroller() release];
-    _scroller = nil;
+    [_scrollView removeFromSuperview];
+    [_scrollView release];
+    _scrollView = nil;
     
     realContentHeight = 0.0f;
     contentHeight = 0.0f;
@@ -563,9 +574,13 @@ NS_INLINE void reloadCCSections(void) {
 %hook SBControlCenterViewController
 
 - (CGFloat)contentHeightForOrientation:(UIInterfaceOrientation)orientation {
+    currentOrientation = orientation;
+    
+    if (iPad) {
+        return %orig;
+    }
+    
     if (!contentHeightIsSet) {
-        currentOrientation = orientation;
-        
         if (kCCIsInLandscape) {
             contentHeight = %orig;
             
@@ -627,6 +642,10 @@ NS_INLINE void reloadCCSections(void) {
 }
 
 - (void)noteSectionEnabledStateDidChange:(SBControlCenterSectionViewController *)section {
+    if (iPad) {
+        return %orig;
+    }
+    
     if (self.view.window) {
         [UIView animateWithDuration:0.2 delay:0.0 options:(UIViewAnimationOptionCurveEaseInOut | UIViewAnimationOptionBeginFromCurrentState) animations:^{
             [self _updateContentFrame];
@@ -637,6 +656,10 @@ NS_INLINE void reloadCCSections(void) {
 }
 
 - (void)_updateContentFrame {
+    if (iPad) {
+        return %orig;
+    }
+    
     contentHeightIsSet = NO;
     
     %orig;
@@ -705,9 +728,7 @@ NS_INLINE void reloadCCSections(void) {
         [contentView _removeSectionController:contentView.quickLaunchSection];
     }
     
-    //    [scroller() removeFromSuperview];
-    
-    scroller().contentOffset = CGPointZero;
+    _scrollView.contentOffset = CGPointZero;
     
     contentHeight = 0.0f;
     realContentHeight = 0.0f;
@@ -822,7 +843,6 @@ NS_INLINE void reloadCCSections(void) {
         }
         
         
-        
         NSMutableDictionary *replacing = loader.replacingBundles.mutableCopy;
         
         if (!replacing.count) {
@@ -836,22 +856,24 @@ NS_INLINE void reloadCCSections(void) {
             }
             
             for (NSString *key in [replacements.copy autorelease]) {
-                NSArray *replacementBundles = replacing[key];
-                
                 NSString *setReplacementID = replacements[key];
                 
+                NSArray *replacementBundles = replacing[key];
+                
                 if (replacementBundles) {
-                    BOOL found = NO;
-                    
-                    for (NSBundle *bundle in replacementBundles) {
-                        if ([bundle.bundleIdentifier isEqualToString:setReplacementID]) {
-                            found = YES;
-                            break;
+                    if (![setReplacementID isEqualToString:@"de.j-gessner.ccloader.reserved.defaultStockSection"]) {
+                        BOOL found = NO;
+                        
+                        for (NSBundle *bundle in replacementBundles) {
+                            if ([bundle.bundleIdentifier isEqualToString:setReplacementID]) {
+                                found = YES;
+                                break;
+                            }
                         }
-                    }
-                    
-                    if (!found) {
-                        replacements[key] = [replacementBundles.firstObject bundleIdentifier];
+                        
+                        if (!found) {
+                            replacements[key] = [replacementBundles.firstObject bundleIdentifier];
+                        }
                     }
                     
                     [replacing removeObjectForKey:key];
