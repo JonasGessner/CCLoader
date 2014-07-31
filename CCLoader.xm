@@ -648,21 +648,32 @@ NS_INLINE void reloadCCSections(void) {
     
     if (self.view.window) {
         [UIView animateWithDuration:0.2 delay:0.0 options:(UIViewAnimationOptionCurveEaseInOut | UIViewAnimationOptionBeginFromCurrentState) animations:^{
-            [self _updateContentFrame];
+            [self _CCLoader_updateContentFrame];
         } completion:nil];
     }
     
     %orig;
 }
 
-- (void)_updateContentFrame {
+%new
+- (void)_CCLoader_updateContentFrame {
+    void (^orig)(void) = ^{
+        if ([self respondsToSelector:@selector(_updateContentFrame)]) {
+            [self _updateContentFrame];
+        }
+        else {
+            SBControlCenterContainerView *containerView = MSHookIvar<SBControlCenterContainerView *>(self, "_containerView");
+            [containerView _updateContentFrame];
+        }
+    };
+    
     if (iPad) {
-        return %orig;
+        return orig();
     }
     
     contentHeightIsSet = NO;
     
-    %orig;
+    orig();
     
     SBControlCenterContentView *contentView = MSHookIvar<SBControlCenterContentView *>(self, "_contentView");
     
@@ -677,7 +688,7 @@ NS_INLINE void reloadCCSections(void) {
     [contentView layoutIfNeeded];
     
     [UIView animateWithDuration:0.2 delay:0.0 options:(UIViewAnimationOptionCurveEaseInOut | UIViewAnimationOptionBeginFromCurrentState) animations:^{
-        [self _updateContentFrame];
+        [self _CCLoader_updateContentFrame];
     } completion:nil];
 }
 

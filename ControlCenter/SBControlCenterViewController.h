@@ -37,6 +37,10 @@
 - (void)_handlePan:(id)arg1;
 - (void)_handleTap:(id)arg1;
 - (void)_updateContentFrame;
+
+//custom method
+- (void)_CCLoader_updateContentFrame;
+
 - (void)viewDidAppear:(BOOL)arg1;
 - (void)viewDidLoad;
 - (void)loadView;

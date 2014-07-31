@@ -285,8 +285,8 @@
     else if (selfBundleType == CCBundleTypeWeeApp) {
         [selfSection hostDidPresent];
         
-        //For some reason this needs to be here or the Calendar Widget won't be displayed correctly after the first dismissal o.O
-        if ([selfSection isKindOfClass:%c(EKCalendarWidgetViewController)]) {
+        //For some reason this needs to be here or the Calendar Widget won't be displayed correctly after the first dismissal?
+        if ([selfSection isKindOfClass:%c(EKCalendarWidgetViewController)] && [selfSection respondsToSelector:@selector(_refreshDayView)]) {
             [(EKCalendarWidgetViewController *)selfSection _refreshDayView];
         }
     }
