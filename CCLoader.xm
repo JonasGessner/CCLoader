@@ -16,7 +16,6 @@
 #import "CCLoaderSettings/BBWeeAppController-Protocol.h"
 #import "CCLoaderSettings/SpringBoardUIServices/_SBUIWidgetViewController.h"
 
-
 #import "CCLoaderSettings/CCBundleLoader.h"
 #import "CCSectionViewController.h"
 #import "CCScrollView.h"
@@ -157,7 +156,7 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
     
     NSMutableSet *usedCustomSections = (cleanUnusedSections ? [NSMutableSet setWithArray:customSectionViewControllers.allKeys] : nil);
     
-    CCSectionViewController *(^loadCustomSection)(NSString *sectionIdentifier, NSBundle *loadingBundle, CCBundleType type) = ^CCSectionViewController *(NSString *sectionIdentifier, NSBundle *loadingBundle, CCBundleType type) {
+    CCSectionViewController *(^loadCustomSection)(NSString *sectionIdentifier, NSBundle *loadingBundle, CCBundleType type, BOOL *fallbackToStockSection) = ^CCSectionViewController *(NSString *sectionIdentifier, NSBundle *loadingBundle, CCBundleType type, BOOL *fallbackToStockSection) {
         if (!checkBundleForType(loadingBundle, type)) {
             [loadingBundle unload];
             NSLog(@"[CCLoader] ERROR: Bundle %@ is invalid", loadingBundle);
@@ -179,7 +178,15 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
                 [usedCustomSections removeObject:sectionIdentifier];
             }
             
-            [_sectionViewControllers addObject:sectionViewController];
+            
+            if (!sectionViewController) {
+                if (fallbackToStockSection) {
+                    *fallbackToStockSection = YES;
+                }
+            }
+            else {
+                [_sectionViewControllers addObject:sectionViewController];
+            }
             
             [bundles removeObject:loadingBundle];
             
@@ -214,9 +221,16 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
                 }
                 
                 if (replacingBundle) {
-                    CCSectionViewController *section = loadCustomSection(replacingID, replacingBundle, CCBundleTypeDefault);
+                    BOOL useStockSection = NO;
                     
-                    [section _CCLoader_setReplacingSectionViewController:stockSectionViewControllerForID(contentView, sectionID)];
+                    CCSectionViewController *section = loadCustomSection(replacingID, replacingBundle, CCBundleTypeDefault, &useStockSection);
+                    
+                    if (useStockSection) {
+                        [_sectionViewControllers addObject:stockSectionViewControllerForID(contentView, sectionID)];
+                    }
+                    else {
+                        [section _CCLoader_setReplacingSectionViewController:stockSectionViewControllerForID(contentView, sectionID)];
+                    }
                 }
                 else {
                     [_sectionViewControllers addObject:stockSectionViewControllerForID(contentView, sectionID)];
@@ -228,7 +242,7 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
             
             for (NSBundle *bundle in bundles) {
                 if ([bundle.bundleIdentifier isEqualToString:sectionID]) {
-                    loadCustomSection(sectionID, bundle, CCBundleTypeDefault);
+                    loadCustomSection(sectionID, bundle, CCBundleTypeDefault, NULL);
                     added = YES;
                     break;
                 }
@@ -237,7 +251,7 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
             if (!added) {
                 for (NSBundle *bundle in NCBundles) {
                     if ([bundle.bundleIdentifier isEqualToString:sectionID]) {
-                        loadCustomSection(sectionID, bundle, CCBundleTypeWeeApp);
+                        loadCustomSection(sectionID, bundle, CCBundleTypeWeeApp, NULL);
                         added = YES;
                         break;
                     }
@@ -246,7 +260,7 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
                 if (!added) {
                     for (NSBundle *bundle in oldNCBundles) {
                         if ([bundle.bundleIdentifier isEqualToString:sectionID]) {
-                            loadCustomSection(sectionID, bundle, CCBundleTypeBBWeeApp);
+                            loadCustomSection(sectionID, bundle, CCBundleTypeBBWeeApp, NULL);
                             added = YES;
                             break;
                         }

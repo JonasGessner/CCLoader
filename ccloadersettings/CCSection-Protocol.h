@@ -13,8 +13,14 @@
 @protocol CCSection <NSObject>
 
 @required
+/**
+ Return a valid view with your contents here.
+ */
 - (UIView *)view;
 
+/**
+ Return the desired height of the section here. For sections that replace a stock section, returning CGFLOAT_MIN will result in the equal height of the section that is being replaced.
+ */
 - (CGFloat)sectionHeight;
 
 @optional
@@ -23,5 +29,10 @@
 - (void)controlCenterWillAppear;
 
 - (void)controlCenterDidDisappear;
+
+/**
+ If the section is not ready or available for display return YES and the section will not be displayed, or the stock section will be displayed for a replacing section.
+ */
++ (BOOL)isUnavailable;
 
 @end
