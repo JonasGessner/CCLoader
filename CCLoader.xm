@@ -167,11 +167,11 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
             
             if (!sectionViewController) {
                 sectionViewController = [[%c(CCSectionViewController) alloc] initWithCCLoaderBundle:loadingBundle type:type];
-                [sectionViewController setDelegate:viewController];
-                
-                customSectionViewControllers[sectionIdentifier] = sectionViewController;
-                
-                [sectionViewController release];
+                if(sectionViewController) {
+                	[sectionViewController setDelegate:viewController];
+                	customSectionViewControllers[sectionIdentifier] = sectionViewController;
+                	[sectionViewController release];
+                }
             }
             
             if (cleanUnusedSections) {

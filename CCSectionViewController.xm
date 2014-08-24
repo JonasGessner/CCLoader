@@ -83,7 +83,7 @@
         }
         
         if (type == CCBundleTypeDefault && [principalClass respondsToSelector:@selector(isUnavailable)]) {
-            if (![principalClass isUnavailable]) {
+            if ([principalClass isUnavailable]) {
                 [self release];
                 self = nil;
                 return nil;
