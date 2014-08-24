@@ -82,14 +82,6 @@
             principalClass = [bundle principalClass];
         }
         
-        if (type == CCBundleTypeDefault && [principalClass respondsToSelector:@selector(isUnavailable)]) {
-            if (![principalClass isUnavailable]) {
-                [self release];
-                self = nil;
-                return nil;
-            }
-        }
-        
         _SBUIWidgetViewController <CCSection, BBWeeAppController> *section = [[principalClass alloc] init];
 
         if (type == CCBundleTypeWeeApp) {

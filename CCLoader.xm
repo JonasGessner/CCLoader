@@ -165,19 +165,22 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
         else {
             CCSectionViewController *sectionViewController = customSectionViewControllers[sectionIdentifier];
             
-            if (!sectionViewController) {
+            Class principalClass = loadingBundle.principalClass;
+            BOOL available = !([principalClass respondsToSelector:@selector(isUnavailable)] && [principalClass isUnavailable]);
+                        
+            if (!sectionViewController && available) {
                 sectionViewController = [[%c(CCSectionViewController) alloc] initWithCCLoaderBundle:loadingBundle type:type];
                 [sectionViewController setDelegate:viewController];
-                
                 customSectionViewControllers[sectionIdentifier] = sectionViewController;
-                
                 [sectionViewController release];
+            }else{
+            	[customSectionViewControllers removeObjectForKey:sectionIdentifier]; // remove if was added before
+	            [loadingBundle unload];
             }
             
             if (cleanUnusedSections) {
                 [usedCustomSections removeObject:sectionIdentifier];
             }
-            
             
             if (!sectionViewController) {
                 if (fallbackToStockSection) {
