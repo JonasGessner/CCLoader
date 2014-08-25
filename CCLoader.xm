@@ -167,7 +167,7 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
             
             Class principalClass = loadingBundle.principalClass;
             
-            BOOL available = !([principalClass respondsToSelector:@selector(isUnavailable)] && [principalClass isUnavailable]);
+            BOOL available = !(type == CCBundleTypeDefault && [principalClass respondsToSelector:@selector(isUnavailable)] && [principalClass isUnavailable]);
                         
             if (!sectionViewController && available) {
                 sectionViewController = [[%c(CCSectionViewController) alloc] initWithCCLoaderBundle:loadingBundle type:type];
@@ -178,9 +178,9 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
                 
                 [sectionViewController release];
             }
-            else {
+            else if (sectionViewController && !available) {
             	[customSectionViewControllers removeObjectForKey:sectionIdentifier];
-	            [loadingBundle unload];
+                sectionViewController = nil;
             }
             
             if (cleanUnusedSections) {
