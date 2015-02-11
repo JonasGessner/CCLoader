@@ -254,6 +254,9 @@
     
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellID forIndexPath:indexPath];
     
+    cell.contentView.clipsToBounds = YES;
+    cell.clipsToBounds = YES;
+    
     if (indexPath.section == 2-iPad) {
         if (indexPath.row == 0) {
             UISwitch *accessory = [UISwitch new];
@@ -397,52 +400,54 @@
 }
 
 - (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)sourceIndexPath toIndexPath:(NSIndexPath *)destinationIndexPath {
-    [self.tableView beginUpdates];
-    
-    BOOL clearRow = ((destinationIndexPath.section == 0 && !_enabled.count) || (destinationIndexPath.section == 1 && !_disabled.count));
-    
-    if (sourceIndexPath.section == 0) {
-        NSString *sourceID = _enabled[sourceIndexPath.row];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [tableView beginUpdates];
         
-        [_enabled removeObjectAtIndex:sourceIndexPath.row];
+        BOOL clearRow = ((destinationIndexPath.section == 0 && !_enabled.count) || (destinationIndexPath.section == 1 && !_disabled.count));
         
-        if (destinationIndexPath.section == 0) {
-            [_enabled insertObject:sourceID atIndex:destinationIndexPath.row];
+        if (sourceIndexPath.section == 0) {
+            NSString *sourceID = _enabled[sourceIndexPath.row];
+            
+            [_enabled removeObjectAtIndex:sourceIndexPath.row];
+            
+            if (destinationIndexPath.section == 0) {
+                [_enabled insertObject:sourceID atIndex:destinationIndexPath.row];
+            }
+            else {
+                [_disabled insertObject:sourceID atIndex:(clearRow ? 0 : destinationIndexPath.row)];
+            }
         }
-        else {
-            [_disabled insertObject:sourceID atIndex:(clearRow ? 0 : destinationIndexPath.row)];
+        else if (sourceIndexPath.section == 1) {
+            NSString *sourceID = _disabled[sourceIndexPath.row];
+            
+            [_disabled removeObjectAtIndex:sourceIndexPath.row];
+            
+            if (destinationIndexPath.section == 1) {
+                [_disabled insertObject:sourceID atIndex:destinationIndexPath.row];
+            }
+            else {
+                [_enabled insertObject:sourceID atIndex:(clearRow ? 0 : destinationIndexPath.row)];
+            }
         }
-    }
-    else if (sourceIndexPath.section == 1) {
-        NSString *sourceID = _disabled[sourceIndexPath.row];
         
-        [_disabled removeObjectAtIndex:sourceIndexPath.row];
-        
-        if (destinationIndexPath.section == 1) {
-            [_disabled insertObject:sourceID atIndex:destinationIndexPath.row];
+        if (clearRow) {
+            NSIndexPath *remove = [NSIndexPath indexPathForRow:destinationIndexPath.section inSection:destinationIndexPath.section];
+            
+            [self.tableView deleteRowsAtIndexPaths:@[remove] withRowAnimation:UITableViewRowAnimationNone];
         }
-        else {
-            [_enabled insertObject:sourceID atIndex:(clearRow ? 0 : destinationIndexPath.row)];
+        
+        BOOL insertRow = ((sourceIndexPath.section == 0 && !_enabled.count) || (sourceIndexPath.section == 1 && !_disabled.count));
+        
+        if (insertRow) {
+            NSIndexPath *add = [NSIndexPath indexPathForRow:0 inSection:sourceIndexPath.section];
+            
+            [self.tableView insertRowsAtIndexPaths:@[add] withRowAnimation:UITableViewRowAnimationFade];
         }
-    }
-    
-    if (clearRow) {
-        NSIndexPath *remove = [NSIndexPath indexPathForRow:destinationIndexPath.section inSection:destinationIndexPath.section];
         
-        [self.tableView deleteRowsAtIndexPaths:@[remove] withRowAnimation:UITableViewRowAnimationNone];
-    }
-    
-    BOOL insertRow = ((sourceIndexPath.section == 0 && !_enabled.count) || (sourceIndexPath.section == 1 && !_disabled.count));
-    
-    if (insertRow) {
-        NSIndexPath *add = [NSIndexPath indexPathForRow:0 inSection:sourceIndexPath.section];
+        [tableView endUpdates];
         
-        [self.tableView insertRowsAtIndexPaths:@[add] withRowAnimation:UITableViewRowAnimationFade];
-    }
-    
-    [self.tableView endUpdates];
-    
-    [self syncPrefs:YES];
+        [self syncPrefs:YES];
+    });
 }
 
 @end

@@ -1,0 +1,153 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		6B8FD20F1A8BA16700F93967 /* CCLoader */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 6B8FD2101A8BA16800F93967 /* Build configuration list for PBXAggregateTarget "CCLoader" */;
+			buildPhases = (
+				6B8FD2131A8BA16E00F93967 /* ShellScript */,
+			);
+			dependencies = (
+			);
+			name = CCLoader;
+			productName = CCLoader;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXFileReference section */
+		6B8FD1D71A8B9FF200F93967 /* CCLoader.xm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CCLoader.xm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
+		6B8FD1D81A8B9FF200F93967 /* CCBundleLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CCBundleLoader.m; path = CCLoaderSettings/CCBundleLoader.m; sourceTree = "<group>"; };
+		6B8FD1D91A8B9FF200F93967 /* CCLoaderReplacementsViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CCLoaderReplacementsViewController.m; path = CCLoaderSettings/CCLoaderReplacementsViewController.m; sourceTree = "<group>"; };
+		6B8FD1DA1A8B9FF200F93967 /* CCLoaderSettingsListController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CCLoaderSettingsListController.m; path = CCLoaderSettings/CCLoaderSettingsListController.m; sourceTree = "<group>"; };
+		6B8FD1DB1A8B9FF200F93967 /* CCScrollView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CCScrollView.m; sourceTree = "<group>"; };
+		6B8FD1DC1A8B9FF200F93967 /* CCSectionView.x */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CCSectionView.x; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
+		6B8FD1DD1A8B9FF200F93967 /* CCSectionViewController.xm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CCSectionViewController.xm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		6B8FD1C71A8B9F4C00F93967 = {
+			isa = PBXGroup;
+			children = (
+				6B8FD1D71A8B9FF200F93967 /* CCLoader.xm */,
+				6B8FD1D81A8B9FF200F93967 /* CCBundleLoader.m */,
+				6B8FD1DC1A8B9FF200F93967 /* CCSectionView.x */,
+				6B8FD1DD1A8B9FF200F93967 /* CCSectionViewController.xm */,
+				6B8FD1DE1A8B9FF700F93967 /* Settings */,
+				6B8FD1DB1A8B9FF200F93967 /* CCScrollView.m */,
+			);
+			sourceTree = "<group>";
+		};
+		6B8FD1DE1A8B9FF700F93967 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				6B8FD1D91A8B9FF200F93967 /* CCLoaderReplacementsViewController.m */,
+				6B8FD1DA1A8B9FF200F93967 /* CCLoaderSettingsListController.m */,
+			);
+			name = Settings;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXProject section */
+		6B8FD1C81A8B9F4C00F93967 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0610;
+				TargetAttributes = {
+					6B8FD20F1A8BA16700F93967 = {
+						CreatedOnToolsVersion = 6.1.1;
+					};
+				};
+			};
+			buildConfigurationList = 6B8FD1CB1A8B9F4C00F93967 /* Build configuration list for PBXProject "CCLoader" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 6B8FD1C71A8B9F4C00F93967;
+			productRefGroup = 6B8FD1C71A8B9F4C00F93967;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				6B8FD20F1A8BA16700F93967 /* CCLoader */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		6B8FD2131A8BA16E00F93967 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 12;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "#You need to have password-less ssh access to your device or Xcode will get stuck while building\n#Screw this, NOT WORKING... Can't change Xcode's stupid PATH variable, so scripts in /opt/local/bin won't work\nsh usbinstall.sh";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		6B8FD1CC1A8B9F4C00F93967 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		6B8FD1CD1A8B9F4C00F93967 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Release;
+		};
+		6B8FD2111A8BA16800F93967 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		6B8FD2121A8BA16800F93967 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		6B8FD1CB1A8B9F4C00F93967 /* Build configuration list for PBXProject "CCLoader" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6B8FD1CC1A8B9F4C00F93967 /* Debug */,
+				6B8FD1CD1A8B9F4C00F93967 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6B8FD2101A8BA16800F93967 /* Build configuration list for PBXAggregateTarget "CCLoader" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6B8FD2111A8BA16800F93967 /* Debug */,
+				6B8FD2121A8BA16800F93967 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 6B8FD1C81A8B9F4C00F93967 /* Project object */;
+}

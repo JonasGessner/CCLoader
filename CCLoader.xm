@@ -32,6 +32,14 @@
 
 #define kCCLoaderSettingsPath [[NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) firstObject] stringByAppendingPathComponent:@"Preferences/de.j-gessner.ccloader.plist"]
 
+#ifndef NSFoundationVersionNumber_iOS_8_0
+#define NSFoundationVersionNumber_iOS_8_0 1134.10
+#endif
+
+#ifndef iOS8
+#define iOS8 (NSFoundationVersionNumber >= NSFoundationVersionNumber_iOS_8_0)
+#endif
+
 #define iPad (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
 
 #define kCCGrabberHeight 25.0f
@@ -96,22 +104,22 @@ NS_INLINE SBControlCenterSectionViewController *stockSectionViewControllerForID(
 }
 
 /*NS_INLINE void setStockSectionViewControllerForID(SBControlCenterContentView *contentView, NSString *sectionID, id value) {
-    if ([sectionID isEqualToString:@"com.apple.controlcenter.settings"]) {
-        contentView.settingsSection = value;
-    }
-    else if ([sectionID isEqualToString:@"com.apple.controlcenter.brightness"]) {
-        contentView.brightnessSection = value;
-    }
-    else if ([sectionID isEqualToString:@"com.apple.controlcenter.media-controls"]) {
-        contentView.mediaControlsSection = value;
-    }
-    else if ([sectionID isEqualToString:@"com.apple.controlcenter.air-stuff"]) {
-        contentView.airplaySection = value;
-    }
-    else if ([sectionID isEqualToString:@"com.apple.controlcenter.quick-launch"]) {
-        contentView.quickLaunchSection = value;
-    }
-}*/
+ if ([sectionID isEqualToString:@"com.apple.controlcenter.settings"]) {
+ contentView.settingsSection = value;
+ }
+ else if ([sectionID isEqualToString:@"com.apple.controlcenter.brightness"]) {
+ contentView.brightnessSection = value;
+ }
+ else if ([sectionID isEqualToString:@"com.apple.controlcenter.media-controls"]) {
+ contentView.mediaControlsSection = value;
+ }
+ else if ([sectionID isEqualToString:@"com.apple.controlcenter.air-stuff"]) {
+ contentView.airplaySection = value;
+ }
+ else if ([sectionID isEqualToString:@"com.apple.controlcenter.quick-launch"]) {
+ contentView.quickLaunchSection = value;
+ }
+ }*/
 
 NS_INLINE BOOL checkBundleForType(NSBundle *bundle, CCBundleType type) {
     if (type == CCBundleTypeDefault) {
@@ -168,7 +176,7 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
             Class principalClass = loadingBundle.principalClass;
             
             BOOL available = !(type == CCBundleTypeDefault && [principalClass respondsToSelector:@selector(isUnavailable)] && [principalClass isUnavailable]);
-                        
+            
             if (!sectionViewController && available) {
                 sectionViewController = [[%c(CCSectionViewController) alloc] initWithCCLoaderBundle:loadingBundle type:type];
                 
@@ -179,7 +187,7 @@ NS_INLINE NSMutableArray *sectionViewControllersForIDs(NSArray *IDs, NSDictionar
                 [sectionViewController release];
             }
             else if (sectionViewController && !available) {
-            	[customSectionViewControllers removeObjectForKey:sectionIdentifier];
+                [customSectionViewControllers removeObjectForKey:sectionIdentifier];
                 sectionViewController = nil;
             }
             
@@ -371,7 +379,7 @@ NS_INLINE void reloadCCSections(void) {
         [self addSubview:scrollView()];
     }
     
-    NSMutableArray *_separators = MSHookIvar<NSMutableArray *>(self, "_dividerViews");
+    NSMutableArray *_separators = (iOS8 ? nil : MSHookIvar<NSMutableArray *>(self, "_dividerViews"));
     
     if (_separators) {
         for (SBControlCenterSeparatorView *separator in _separators) {
@@ -430,44 +438,44 @@ NS_INLINE void reloadCCSections(void) {
                 
                 view.frame = frame;
                 
-                
-                
-                if (!landscapeSideSection && index < sections.count-1-landscape && !CGRectIsEmpty(frame)) {
-                    if (!separators) {
-                        separators = [[NSMutableArray alloc] init];
-                    }
-                    
-                    SBControlCenterSeparatorView *separator = (separators.count > separatorCount ? separators[separatorCount] : nil);
-                    
-                    if (!separator) {
-                        separator = [[%c(SBControlCenterSeparatorView) alloc] initWithFrame:CGRectZero];
+                if (!iOS8) {
+                    if (!landscapeSideSection && index < sections.count-1-landscape && !CGRectIsEmpty(frame)) {
+                        if (!separators) {
+                            separators = [[NSMutableArray alloc] init];
+                        }
                         
-                        [scrollView() addSubview:separator];
+                        SBControlCenterSeparatorView *separator = (separators.count > separatorCount ? separators[separatorCount] : nil);
                         
-                        [separators addObject:separator];
+                        if (!separator) {
+                            separator = [[%c(SBControlCenterSeparatorView) alloc] initWithFrame:CGRectZero];
+                            
+                            [scrollView() addSubview:separator];
+                            
+                            [separators addObject:separator];
+                            
+                            [separator release];
+                        }
                         
-                        [separator release];
+                        
+                        if (separator.superview != scrollView()) {
+                            [scrollView() addSubview:separator];
+                        }
+                        
+                        separator.hidden = hideSeparators;
+                        
+                        CGRect separatorFrame = CGRectZero;
+                        
+                        separatorFrame.origin.x = view.frame.origin.x;
+                        separatorFrame.origin.y = CGRectGetMaxY(view.frame);
+                        
+                        separatorFrame.size.width = view.frame.size.width;
+                        separatorFrame.size.height = kCCSeparatorHeight;
+                        
+                        
+                        separator.frame = separatorFrame;
+                        
+                        separatorCount++;
                     }
-                    
-                    
-                    if (separator.superview != scrollView()) {
-                        [scrollView() addSubview:separator];
-                    }
-                    
-                    separator.hidden = hideSeparators;
-                    
-                    CGRect separatorFrame = CGRectZero;
-                    
-                    separatorFrame.origin.x = view.frame.origin.x;
-                    separatorFrame.origin.y = CGRectGetMaxY(view.frame);
-                    
-                    separatorFrame.size.width = view.frame.size.width;
-                    separatorFrame.size.height = kCCSeparatorHeight;
-                    
-                    
-                    separator.frame = separatorFrame;
-                    
-                    separatorCount++;
                 }
                 
                 if (!landscapeSideSection) {
@@ -478,12 +486,14 @@ NS_INLINE void reloadCCSections(void) {
             index++;
         }
         
-        while (separators.count > separatorCount) {
-            SBControlCenterSeparatorView *separator = separators.lastObject;
-            
-            [separator removeFromSuperview];
-            
-            [separators removeLastObject];
+        if (!iOS8) {
+            while (separators.count > separatorCount) {
+                SBControlCenterSeparatorView *separator = separators.lastObject;
+                
+                [separator removeFromSuperview];
+                
+                [separators removeLastObject];
+            }
         }
     }
 }
@@ -782,7 +792,7 @@ NS_INLINE void reloadCCSections(void) {
 #pragma mark - Constructor
 
 %ctor {
-	@autoreleasepool {
+    @autoreleasepool {
         CCBundleLoader *loader = [CCBundleLoader sharedInstance];
         
         [loader loadBundlesAndReplacements:YES loadNames:NO checkBundles:NO];
@@ -927,7 +937,6 @@ NS_INLINE void reloadCCSections(void) {
             [replacements release];
         }
         
-        
         [prefs writeToFile:kCCLoaderSettingsPath atomically:YES];
         
         [replacing release];
@@ -938,5 +947,5 @@ NS_INLINE void reloadCCSections(void) {
         %init(main);
         
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)reloadCCSections, CFSTR("de.j-gessner.ccloader.settingschanged"), NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
-	}
+    }
 }
