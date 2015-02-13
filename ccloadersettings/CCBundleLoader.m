@@ -199,7 +199,7 @@
 }
 
 - (void)loadBundlesAndReplacements:(BOOL)alsoLoadReplacementBundles loadNames:(BOOL)names checkBundles:(BOOL)check {
-    NSMutableDictionary *displayNames = (iOS8 ? nil : [self loadNCBundles:names checkBundles:NO]);
+    NSMutableDictionary *displayNames = (iOS8 ? [NSMutableDictionary dictionary] : [self loadNCBundles:names checkBundles:NO]);
     
     if (names) {
         [displayNames addEntriesFromDictionary:kCCLoaderStockCCDisplayNames];
