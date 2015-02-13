@@ -32,14 +32,6 @@
 
 #define kCCLoaderSettingsPath [[NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) firstObject] stringByAppendingPathComponent:@"Preferences/de.j-gessner.ccloader.plist"]
 
-#ifndef NSFoundationVersionNumber_iOS_8_0
-#define NSFoundationVersionNumber_iOS_8_0 1134.10
-#endif
-
-#ifndef iOS8
-#define iOS8 (NSFoundationVersionNumber >= NSFoundationVersionNumber_iOS_8_0)
-#endif
-
 #define iPad (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)
 
 #define kCCGrabberHeight 25.0f

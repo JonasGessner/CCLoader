@@ -21,6 +21,15 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXFileReference section */
+		6B1667401A8CDE6F00DD2098 /* CCBundleLoader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CCBundleLoader.h; path = CCLoaderSettings/CCBundleLoader.h; sourceTree = "<group>"; };
+		6B8968A11A8CE33B0006841D /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		6B8968A21A8CE3440006841D /* control */ = {isa = PBXFileReference; lastKnownFileType = text; path = control; sourceTree = "<group>"; };
+		6B8968A31A8CE3490006841D /* CCScrollView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CCScrollView.h; sourceTree = "<group>"; };
+		6B8968A41A8CE3550006841D /* CCSectionViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CCSectionViewController.h; sourceTree = "<group>"; };
+		6B8968A51A8CE35A0006841D /* CCSectionView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CCSectionView.h; sourceTree = "<group>"; };
+		6B8968A61A8CE3640006841D /* CCLoaderReplacementsViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CCLoaderReplacementsViewController.h; path = CCLoaderSettings/CCLoaderReplacementsViewController.h; sourceTree = "<group>"; };
+		6B8968A71A8CE3640006841D /* CCLoaderSettingsListController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CCLoaderSettingsListController.h; path = CCLoaderSettings/CCLoaderSettingsListController.h; sourceTree = "<group>"; };
+		6B8968A91A8CE50F0006841D /* CCSection-Protocol.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "CCSection-Protocol.h"; path = "CCLoaderSettings/CCSection-Protocol.h"; sourceTree = "<group>"; };
 		6B8FD1D71A8B9FF200F93967 /* CCLoader.xm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CCLoader.xm; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
 		6B8FD1D81A8B9FF200F93967 /* CCBundleLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CCBundleLoader.m; path = CCLoaderSettings/CCBundleLoader.m; sourceTree = "<group>"; };
 		6B8FD1D91A8B9FF200F93967 /* CCLoaderReplacementsViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CCLoaderReplacementsViewController.m; path = CCLoaderSettings/CCLoaderReplacementsViewController.m; sourceTree = "<group>"; };
@@ -31,22 +40,39 @@
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		6B8968A81A8CE3740006841D /* Metadata */ = {
+			isa = PBXGroup;
+			children = (
+				6B8968A11A8CE33B0006841D /* Makefile */,
+				6B8968A21A8CE3440006841D /* control */,
+			);
+			name = Metadata;
+			sourceTree = "<group>";
+		};
 		6B8FD1C71A8B9F4C00F93967 = {
 			isa = PBXGroup;
 			children = (
 				6B8FD1D71A8B9FF200F93967 /* CCLoader.xm */,
+				6B1667401A8CDE6F00DD2098 /* CCBundleLoader.h */,
 				6B8FD1D81A8B9FF200F93967 /* CCBundleLoader.m */,
+				6B8968A51A8CE35A0006841D /* CCSectionView.h */,
 				6B8FD1DC1A8B9FF200F93967 /* CCSectionView.x */,
+				6B8968A41A8CE3550006841D /* CCSectionViewController.h */,
 				6B8FD1DD1A8B9FF200F93967 /* CCSectionViewController.xm */,
+				6B8968A81A8CE3740006841D /* Metadata */,
 				6B8FD1DE1A8B9FF700F93967 /* Settings */,
+				6B8968A31A8CE3490006841D /* CCScrollView.h */,
 				6B8FD1DB1A8B9FF200F93967 /* CCScrollView.m */,
+				6B8968A91A8CE50F0006841D /* CCSection-Protocol.h */,
 			);
 			sourceTree = "<group>";
 		};
 		6B8FD1DE1A8B9FF700F93967 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				6B8968A61A8CE3640006841D /* CCLoaderReplacementsViewController.h */,
 				6B8FD1D91A8B9FF200F93967 /* CCLoaderReplacementsViewController.m */,
+				6B8968A71A8CE3640006841D /* CCLoaderSettingsListController.h */,
 				6B8FD1DA1A8B9FF200F93967 /* CCLoaderSettingsListController.m */,
 			);
 			name = Settings;
@@ -95,7 +121,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "#You need to have password-less ssh access to your device or Xcode will get stuck while building\n#Screw this, NOT WORKING... Can't change Xcode's stupid PATH variable, so scripts in /opt/local/bin won't work\nsh usbinstall.sh";
+			shellScript = "#You need to have password-less ssh access to your device or Xcode will get stuck while building\n#Run using CMD B (Scheme is not configured for running, so CMD R will not work)\nPATH=${PATH}:/opt/local/bin\nsh usbinstall-Xcode.sh";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -115,14 +141,18 @@
 		6B8FD2111A8BA16800F93967 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_MODULES_AUTOLINK = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = iphoneos;
 			};
 			name = Debug;
 		};
 		6B8FD2121A8BA16800F93967 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_MODULES_AUTOLINK = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = iphoneos;
 			};
 			name = Release;
 		};

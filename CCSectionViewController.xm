@@ -399,3 +399,9 @@
 }
 
 %end
+
+%ctor {
+    @autoreleasepool {
+        %init();
+    }
+}

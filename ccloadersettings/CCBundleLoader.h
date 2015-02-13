@@ -9,6 +9,14 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
+#ifndef NSFoundationVersionNumber_iOS_8_0
+#define NSFoundationVersionNumber_iOS_8_0 1134.10
+#endif
+
+#ifndef iOS8
+#define iOS8 (NSFoundationVersionNumber >= NSFoundationVersionNumber_iOS_8_0)
+#endif
+
 #define kCCLoaderReplaceStockSectionInfoDicationaryKey @"CCReplacingStockSectionID"
 
 #define kCCLoaderStockOrderedSections @[@"com.apple.controlcenter.settings", @"com.apple.controlcenter.brightness", @"com.apple.controlcenter.media-controls", @"com.apple.controlcenter.air-stuff", @"com.apple.controlcenter.quick-launch"]

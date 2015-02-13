@@ -37,6 +37,10 @@
 }
 
 - (NSMutableDictionary *)loadNCBundles:(BOOL)names checkBundles:(BOOL)check {
+    if (iOS8) {
+        return nil;
+    }
+    
     NSMutableDictionary *displayNames = (names ? [NSMutableDictionary dictionary] : nil);
     
     if (names) {
@@ -195,7 +199,7 @@
 }
 
 - (void)loadBundlesAndReplacements:(BOOL)alsoLoadReplacementBundles loadNames:(BOOL)names checkBundles:(BOOL)check {
-    NSMutableDictionary *displayNames = [self loadNCBundles:names checkBundles:NO];
+    NSMutableDictionary *displayNames = (iOS8 ? nil : [self loadNCBundles:names checkBundles:NO]);
     
     if (names) {
         [displayNames addEntriesFromDictionary:kCCLoaderStockCCDisplayNames];
