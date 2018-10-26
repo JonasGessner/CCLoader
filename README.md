@@ -3,7 +3,8 @@ CCLoader
 
 Available to download from Cydia: http://cydia.saurik.com/package/de.j-gessner.ccloader
 
-###General
+### General
+
 CCLoader loads custom sections into the iOS 7 Control Center. Templates for creating a CCLoader plugin are available for theos and for iOSOpenDev:
 <p>
 CCLoader Plugin template for theos: https://github.com/JonasGessner/Theos-NIC-Templates<br>
@@ -11,7 +12,8 @@ CCLoader Plugin template for iOSOpenDev: https://github.com/JonasGessner/iOSOpen
 <br>
 <br>
 
-###Replacing Stock Control Center Sections
+### Replacing Stock Control Center Sections
+
 Stock Control Center sections can also be replaced with a custom bundle. The NIC template will ask you for which section ID should be replaced. The Section IDs that can be replaced with CCLoader are:
 <br>
 <br>
@@ -27,12 +29,15 @@ CCLoader checks for `CCReplacingStockSectionID` in the bundle's Info.plist file.
 A custom section that replaced a stock section has two options regarding the sections height: The custom section can return `CGFLOAT_MIN` as `sectionHeight`, in that case the height of the section that is replaced will be used. If the custom section returns anything other than `CGFLOAT_MIN` then that height will be used. This functionality is limited to iPone/iPod touch and to portrait mode. In landscape or on an iPad the height of the section that is being replaced will be used.
 <br>
 <br>
-###iPad Support
+### iPad Support
+
 The only feature that works on iPads is to replace stock sections. New sections cannot be added to the iPad's Control Center (as of now).
 <br>
 <br>
+
 Contributing
 ======
+
 Contributing to the project is much appreciated. Feel free to fork and modify the project and open pull requests.
 
 You can contact me on Twitter: <a href="http://twitter.com/JonasGessner">@JonasGessner</a>.
